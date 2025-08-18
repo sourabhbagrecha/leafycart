@@ -1,0 +1,19 @@
+{
+  "name": "leafycart-server",
+  "version": "1.0.0",
+  "description": "A MongoDB, Node and React based e-commerce application",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sourabhbagrecha/leafycart.git"
+  },
+  "author": "Sourabh Bagrecha",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sourabhbagrecha/leafycart/issues"
+  },
+  "homepage": "https://github.com/sourabhbagrecha/leafycart#readme"
+}
