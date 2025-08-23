@@ -1,4 +1,4 @@
-import{b as m,u as p,j as e,d as i}from"./index-CcnV_Zkb.js";import{P as h}from"./PageWrapper--Gv4gYqW.js";import{m as s}from"./proxy-B5Y9BLt2.js";const g=i.div`
+import{b as m,u as p,j as e,d as i}from"./index-BLa0kxBv.js";import{P as h}from"./PageWrapper-D3vWYtXS.js";import{m as s}from"./proxy-Bg37ztZW.js";const g=i.div`
   display: grid;
   gap: 1rem;
 `,x=i(s.div)`

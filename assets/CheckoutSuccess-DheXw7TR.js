@@ -1,4 +1,4 @@
-import{b as n,r as s,j as e,d as r}from"./index-CcnV_Zkb.js";import{P as a}from"./PageWrapper--Gv4gYqW.js";import{m as o}from"./proxy-B5Y9BLt2.js";const c=r.div`
+import{b as n,r as s,j as e,d as r}from"./index-BLa0kxBv.js";import{P as a}from"./PageWrapper-D3vWYtXS.js";import{m as o}from"./proxy-Bg37ztZW.js";const c=r.div`
   text-align: center;
   max-width: 600px;
   margin: 0 auto;

@@ -1,4 +1,4 @@
-import{r as n,j as e,d as r}from"./index-CcnV_Zkb.js";import{P as a}from"./PageWrapper--Gv4gYqW.js";import{d as l}from"./db-CpqW60bI.js";import{m}from"./proxy-B5Y9BLt2.js";const x=r.div`
+import{r as n,j as e,d as r}from"./index-BLa0kxBv.js";import{P as a}from"./PageWrapper-D3vWYtXS.js";import{d as l}from"./db-CpqW60bI.js";import{m}from"./proxy-Bg37ztZW.js";const x=r.div`
   display: flex;
   flex-direction: column;
   gap: 1.5rem;

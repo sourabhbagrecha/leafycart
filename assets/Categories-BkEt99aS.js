@@ -1,4 +1,4 @@
-import{r,j as e,L as a,d as i}from"./index-CcnV_Zkb.js";import{P as n}from"./PageWrapper--Gv4gYqW.js";import{d}from"./db-CpqW60bI.js";import{m}from"./proxy-B5Y9BLt2.js";const c=i.div`
+import{r,j as e,L as a,d as i}from"./index-BLa0kxBv.js";import{P as n}from"./PageWrapper-D3vWYtXS.js";import{d}from"./db-CpqW60bI.js";import{m}from"./proxy-Bg37ztZW.js";const c=i.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 2rem;
