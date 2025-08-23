@@ -120,7 +120,6 @@ export default function Help() {
             9am-5pm EST.
             <br />
             Email us at{" "}
-            <a href="mailto:support@ecoshop.com">support@ecoshop.com</a>
           </p>
         </ContactSection>
       </FaqContainer>
