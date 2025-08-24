@@ -128,7 +128,6 @@ export default function ProductDetail() {
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent navigation when clicking the button
-    console.log("Add to cart clicked for product:", product);
     mutation.mutate(product!);
   };
 

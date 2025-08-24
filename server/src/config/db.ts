@@ -40,7 +40,7 @@ export async function connectToDatabase(uri?: string) {
 
   try {
     await client.connect();
-    console.log(`Connected to MongoDB (${process.env.DATABASE_NAME})`);
+    console.log(`Connected to MongoDB`);
 
     const db = client.db(process.env.DATABASE_NAME);
     databases.LeafyCart = db;

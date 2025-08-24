@@ -15,7 +15,6 @@ router.get(
   auth,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      console.log(req.userId);
       const orders = await orderService.findAll(req.userId);
       res.status(200).json(orders);
     } catch (error) {

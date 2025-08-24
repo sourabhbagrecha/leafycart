@@ -188,7 +188,6 @@ export default function Checkout() {
         items: cartData?.items,
         total: cartData?.total,
       };
-      console.log({ body });
       const { data, status } = await axiosClient.post("/api/order", body);
       if (status !== 201) throw new Error("Failed to create order");
       return data;
@@ -260,8 +259,6 @@ export default function Checkout() {
     setIsSubmitting(true);
 
     try {
-      console.log({ formData });
-      console.log("Creating order...");
       mutation.mutate(formData, {
         onSuccess: () => {
           navigate("/");

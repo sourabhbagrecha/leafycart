@@ -137,7 +137,6 @@ export default function Orders() {
     queryKey: ["orders"],
     queryFn: async () => {
       const { data, status } = await axiosClient.get("/api/order");
-      console.log({ data });
       if (status !== 200) throw new Error("Failed to fetch orders");
       return data;
     },
@@ -182,7 +181,10 @@ export default function Orders() {
 
             <ProductPreviews>
               {order.items.slice(0, 4).map((item: CartItem) => (
-                <Link key={item.product._id} to={`/product/${item.product._id}`}>
+                <Link
+                  key={item.product._id}
+                  to={`/product/${item.product._id}`}
+                >
                   <PreviewImageContainer>
                     <ProductPreviewImage
                       src={item.product.image}

@@ -110,10 +110,8 @@ export default function Cart() {
   const axiosClient = useAxios();
 
   const handleRemoveItem = async (productId: string) => {
-    console.log("Remove item from cart:", productId);
     try {
-      const response = await removeProductMutation.mutate(productId);
-      console.log({ response });
+      await removeProductMutation.mutate(productId);
     } catch (error) {
       console.error("Error removing item:", error);
     }
@@ -170,11 +168,10 @@ export default function Cart() {
     ) => {
       if (newQuantity < 1) return;
       try {
-        const response = await updateQuantityMutation.mutate({
+        await updateQuantityMutation.mutate({
           productId,
           quantity: newQuantity,
         });
-        console.log({ response });
       } catch (error) {
         console.error("Error removing item:", error);
       }

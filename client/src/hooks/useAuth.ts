@@ -37,7 +37,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       // Check if token exists in localStorage
       const storedToken = localStorage.getItem("authToken");
-      console.log({ storedToken });
 
       if (storedToken && storedToken !== "undefined") {
         setToken(storedToken);
@@ -73,7 +72,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       );
 
-      console.log({ response });
       if (!response) throw new Error("Failed to create anonymous user");
 
       const { accessToken: newToken } = await response.json();
