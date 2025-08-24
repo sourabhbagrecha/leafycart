@@ -1,13 +1,21 @@
 import { ObjectId } from "mongodb";
 
+export interface ProductInfo {
+  _id: ObjectId;
+  name: String;
+  price: number;
+  image: String;
+}
+
 export interface CartItem {
-  productId: string;
+  product: ProductInfo;
   quantity: number;
 }
 
 export interface Cart {
   _id?: ObjectId;
-  userId: ObjectId | string;
+  userId: ObjectId | String;
   items: CartItem[];
-  updatedAt?: Date | string;
+  updatedAt?: Date | String;
+  total: number;
 }

@@ -50,13 +50,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Fallback: create anonymous user
       await createAnonymousUser();
     } finally {
+      function sleep(ms: number) {
+        return new Promise((resolve) => {
+          setTimeout(resolve, ms);
+        });
+      }
+      await sleep(1000);
       setLoading(false);
     }
   };
 
   const createAnonymousUser = async () => {
     try {
-      console.log("Gonna fetch");
       const response: Response = await fetch(
         `http://localhost:3000/api/users/login/${encodeURI(
           "Ignominious Platypus"

@@ -1,18 +1,17 @@
-import { CartProvider } from "./context/CartProvider";
 import { AuthProvider } from "./hooks/useAuth";
 import { BrowserRouter as Router } from "react-router-dom";
 import MainApp from "./MainApp";
-
-// Lazy load pages
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 export default function App() {
+  const queryClient = new QueryClient();
   return (
-    <CartProvider>
+    <QueryClientProvider client={queryClient}>
       <Router basename="/leafycart">
         <AuthProvider>
           <MainApp />
         </AuthProvider>
       </Router>
-    </CartProvider>
+    </QueryClientProvider>
   );
 }

@@ -10,7 +10,7 @@ const secret = process.env.SECRET || "secret";
 // Get current user profile
 router.get("/me", auth, async (req, res, next) => {
     try {
-        const user = await userService.findById(req.user.userId);
+        const user = await userService.findById(req.userId || "");
         res.json(user);
     }
     catch (error) {

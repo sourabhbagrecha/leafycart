@@ -3,7 +3,9 @@ import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { PageWrapper } from "../components/PageWrapper";
-import { useCart } from "../hooks/useCart";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { Cart, CartItem } from "../types";
+import { useAxios } from "../hooks/useAxios";
 
 const CheckoutContainer = styled.div`
   display: grid;
@@ -124,7 +126,7 @@ interface FormData {
   email: string;
   firstName: string;
   lastName: string;
-  address: string;
+  street: string;
   city: string;
   country: string;
   postalCode: string;
@@ -135,13 +137,12 @@ interface FormData {
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { state, dispatch } = useCart();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     email: "",
     firstName: "",
     lastName: "",
-    address: "",
+    street: "",
     city: "",
     country: "",
     postalCode: "",
@@ -150,6 +151,52 @@ export default function Checkout() {
     cardCvc: "",
   });
   const [errors, setErrors] = useState<Partial<FormData>>({});
+
+  const axiosClient = useAxios();
+  const queryClient = useQueryClient();
+
+  const {
+    data: cartData,
+    isLoading,
+    error,
+  } = useQuery<Cart, Error>({
+    queryKey: ["cart"],
+    queryFn: async () => {
+      const { data, status } = await axiosClient.get("/api/cart");
+      if (status !== 200) throw new Error("Failed to fetch");
+      return data;
+    },
+  });
+
+  const mutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const body = {
+        shippingAddress: {
+          email: formData.email,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          street: formData.street,
+          city: formData.city,
+          country: formData.country,
+          postalCode: formData.postalCode,
+        },
+        paymentInfo: {
+          cardNumber: formData.cardNumber,
+          cardExpiry: formData.cardExpiry,
+          cardCvc: formData.cardCvc,
+        },
+        items: cartData?.items,
+        total: cartData?.total,
+      };
+      console.log({ body });
+      const { data, status } = await axiosClient.post("/api/order", body);
+      if (status !== 201) throw new Error("Failed to create order");
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
+    },
+  });
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -172,7 +219,7 @@ export default function Checkout() {
     const newErrors: Partial<FormData> = {};
 
     if (!formData.email.includes("@")) {
-      newErrors.email = "Please enter a valid email address";
+      newErrors.email = "Please enter a valid email street";
     }
     if (formData.firstName.length < 2) {
       newErrors.firstName = "First name is required";
@@ -180,8 +227,8 @@ export default function Checkout() {
     if (formData.lastName.length < 2) {
       newErrors.lastName = "Last name is required";
     }
-    if (formData.address.length < 5) {
-      newErrors.address = "Please enter a valid address";
+    if (formData.street.length < 5) {
+      newErrors.street = "Please enter a valid address";
     }
     if (formData.city.length < 2) {
       newErrors.city = "City is required";
@@ -214,8 +261,12 @@ export default function Checkout() {
 
     try {
       console.log({ formData });
-      dispatch({ type: "CLEAR_CART" });
-      navigate("/");
+      console.log("Creating order...");
+      mutation.mutate(formData, {
+        onSuccess: () => {
+          navigate("/");
+        },
+      });
     } catch (error) {
       console.error("Error creating order:", error);
     } finally {
@@ -228,7 +279,7 @@ export default function Checkout() {
       email: "john.doe@example.com",
       firstName: "John",
       lastName: "Doe",
-      address: "123 Main Street",
+      street: "123 Main Street",
       city: "New York",
       country: "US",
       postalCode: "10001",
@@ -238,7 +289,23 @@ export default function Checkout() {
     });
   };
 
-  if (state.items.length === 0) {
+  if (isLoading) {
+    return (
+      <PageWrapper title="Checkout">
+        <p>Loading cart...</p>
+      </PageWrapper>
+    );
+  }
+
+  if (error) {
+    return (
+      <PageWrapper title="Checkout">
+        <p>Error loading cart: {error.message}</p>
+      </PageWrapper>
+    );
+  }
+
+  if (cartData?.items.length === 0) {
     return (
       <PageWrapper title="Checkout">
         <p>Your cart is empty. Please add some items before checking out.</p>
@@ -302,16 +369,16 @@ export default function Checkout() {
           </FormGroup>
 
           <FormGroup>
-            <label htmlFor="address">Address</label>
+            <label htmlFor="address">Street</label>
             <input
               type="text"
-              id="address"
-              name="address"
-              value={formData.address}
+              id="street"
+              name="street"
+              value={formData.street}
               onChange={handleInputChange}
               required
             />
-            {errors.address && <ErrorMessage>{errors.address}</ErrorMessage>}
+            {errors.street && <ErrorMessage>{errors.street}</ErrorMessage>}
           </FormGroup>
 
           <FormGroup>
@@ -408,20 +475,12 @@ export default function Checkout() {
             />
             {errors.cardCvc && <ErrorMessage>{errors.cardCvc}</ErrorMessage>}
           </FormGroup>
-
-          <SubmitButton
-            type="submit"
-            disabled={isSubmitting}
-            whileTap={{ scale: 0.95 }}
-          >
-            {isSubmitting ? "Processing..." : `Pay $${state.total.toFixed(2)}`}
-          </SubmitButton>
         </FormSection>
 
         <OrderSummary>
           <h3>Order Summary</h3>
-          {state.items.map((item) => (
-            <OrderItem key={item.product.id}>
+          {cartData?.items.map((item: CartItem) => (
+            <OrderItem key={item.product._id}>
               <span>
                 {item.quantity}x {item.product.name}
               </span>
@@ -430,8 +489,18 @@ export default function Checkout() {
           ))}
           <Total>
             <span>Total</span>
-            <span>${state.total.toFixed(2)}</span>
+            <span>${cartData?.total.toFixed(2)}</span>
           </Total>
+          <SubmitButton
+            type="submit"
+            disabled={isSubmitting}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleSubmit}
+          >
+            {isSubmitting
+              ? "Processing..."
+              : `Pay $${cartData?.total.toFixed(2)}`}
+          </SubmitButton>
         </OrderSummary>
       </CheckoutContainer>
     </PageWrapper>

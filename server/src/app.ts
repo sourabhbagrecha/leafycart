@@ -25,7 +25,7 @@ const startServer = async () => {
     app.use("/api/users", routes.userRoutes);
     app.use("/health", routes.healthRoutes);
     app.use("/api/products", routes.productRoutes);
-    app.use("/api/orders", routes.orderRoutes);
+    app.use("/api/order", routes.orderRoutes);
     app.use("/api/cart", routes.cartRoutes);
 
     // Error handling

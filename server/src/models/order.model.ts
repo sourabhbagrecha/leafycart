@@ -15,6 +15,12 @@ export interface ShippingDetails {
   postalCode: string;
 }
 
+interface PaymentInfo {
+  cardNumber: string;
+  cardExpiry: string;
+  cardCvc: string;
+}
+
 export interface Order {
   _id?: ObjectId;
   id?: string;
@@ -35,4 +41,5 @@ export interface Order {
   createdAt: Date | string;
   updatedAt: Date | string;
   shippingDetails: ShippingDetails;
+  paymentInfo: PaymentInfo;
 }

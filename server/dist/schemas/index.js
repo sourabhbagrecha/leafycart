@@ -59,17 +59,22 @@ export const orderSchema = {
     create: z.object({
         body: z.object({
             items: z.array(z.object({
-                productId: z.string(),
-                name: z.string(),
-                price: z.number().positive(),
-                quantity: z.number().int().positive(),
+                product: z.object({
+                    _id: z.string(),
+                    name: z.string(),
+                    image: z.string(),
+                    price: z.number().positive(),
+                }),
+                quantity: z.preprocess((val) => Number(val), z.number().int().positive()),
             })),
-            totalAmount: z.number().positive(),
+            total: z.number().positive(),
             shippingAddress: z.object({
+                email: z.string(),
+                firstName: z.string(),
+                lastName: z.string(),
                 street: z.string(),
                 city: z.string(),
-                state: z.string(),
-                zipCode: z.string(),
+                postalCode: z.string(),
                 country: z.string(),
             }),
         }),

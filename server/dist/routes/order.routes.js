@@ -3,42 +3,49 @@ import { auth } from "../middlewares/auth.middleware.js";
 import { validate } from "../middlewares/validate.middleware.js";
 import { OrderService } from "../services/order.service.js";
 import { orderSchema } from "../schemas/index.js";
+import { CartService } from "../services/cart.service.js";
 const router = Router();
 const orderService = new OrderService();
+const cartService = new CartService();
 // Get all orders (admin gets all, user gets their own)
 router.get("/", auth, async (req, res, next) => {
     try {
-        const orders = await orderService.findAll(req.user.role === "admin" ? undefined : req.user.userId);
-        res.json(orders);
+        console.log(req.userId);
+        const orders = await orderService.findAll(req.userId);
+        res.status(200).json(orders);
     }
     catch (error) {
         next(error);
     }
 });
 // Get single order
-router.get("/:id", auth, async (req, res, next) => {
-    try {
-        const order = await orderService.findById(req.params.id);
-        // Check if user has permission to view this order
-        if (req.user.role !== "admin" &&
-            order.userId.toString() !== req.user.userId) {
-            return res
-                .status(403)
-                .json({ message: "Not authorized to view this order" });
-        }
-        res.json(order);
-    }
-    catch (error) {
-        next(error);
-    }
-});
+router.get("/:id", auth
+// async (req: Request, res: Response, next: NextFunction) => {
+//   try {
+//     const order = await orderService.findById(req.params.id);
+//     // Check if user has permission to view this order
+//     if (
+//       req.user!.role !== "admin" &&
+//       order.userId.toString() !== req.user!.userId
+//     ) {
+//       return res
+//         .status(403)
+//         .json({ message: "Not authorized to view this order" });
+//     }
+//     res.json(order);
+//   } catch (error) {
+//     next(error);
+//   }
+// }
+);
 // Create order
 router.post("/", auth, validate(orderSchema.create), async (req, res, next) => {
     try {
         const order = await orderService.create({
             ...req.body,
-            userId: req.user.userId,
+            userId: req.userId,
         });
+        await cartService.clearCart(req.userId ?? "");
         res.status(201).json(order);
     }
     catch (error) {

@@ -1,36 +1,16 @@
 import styled from "styled-components";
-import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, useMemo } from "react";
+import { motion } from "framer-motion";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import type { Product } from "../types";
-import { useCart } from "../hooks/useCart";
-import db from "../data/db.json";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "../hooks/useAuth";
+import { useAxios } from "../hooks/useAxios";
 
 const HomeContainer = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
-`;
-
-const FiltersContainer = styled.div`
-  margin-bottom: 2rem;
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-`;
-
-const FilterButton = styled.button<{ disabled: boolean }>`
-  padding: 0.5rem 1rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 4px;
-  background: ${(props) => (props.disabled ? "#2c5282" : "white")};
-  color: ${(props) => (props.disabled ? "white" : "#2d3748")};
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    background: ${(props) => (props.disabled ? "#2a4365" : "#f7fafc")};
-  }
 `;
 
 const Hero = styled.section`
@@ -64,52 +44,6 @@ const SearchInput = styled.input`
   &:focus {
     outline: none;
     border-color: #2c5282;
-  }
-`;
-
-const SearchResults = styled.div`
-  display: grid;
-  gap: 1rem;
-  margin-bottom: 2rem;
-`;
-
-const SearchResultCard = styled(motion.div)`
-  display: grid;
-  grid-template-columns: 100px 1fr;
-  gap: 1rem;
-  padding: 1rem;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  cursor: pointer;
-
-  img {
-    width: 100px;
-    height: 100px;
-    object-fit: cover;
-    border-radius: 4px;
-  }
-`;
-
-const ResultInfo = styled.div`
-  h3 {
-    margin: 0 0 0.5rem;
-  }
-
-  p {
-    margin: 0;
-    color: #666;
-  }
-
-  .price {
-    color: #2c5282;
-    font-weight: bold;
-    margin-top: 0.5rem;
-  }
-
-  .match-score {
-    font-size: 0.875rem;
-    color: #718096;
   }
 `;
 
@@ -185,94 +119,65 @@ const ProductLink = styled(Link)`
   display: block;
 `;
 
-// Simple fuzzy search implementation
-function fuzzySearch(
-  text: string,
-  pattern: string
-): { isMatch: boolean; score: number } {
-  const lowercaseText = text.toLowerCase();
-  const lowercasePattern = pattern.toLowerCase();
-
-  if (lowercasePattern.length === 0) return { isMatch: false, score: 0 };
-  if (lowercaseText.includes(lowercasePattern))
-    return { isMatch: true, score: 1 };
-
-  let score = 0;
-  let patternIdx = 0;
-  let consecutiveMatches = 0;
-
-  for (
-    let i = 0;
-    i < lowercaseText.length && patternIdx < lowercasePattern.length;
-    i++
-  ) {
-    if (lowercaseText[i] === lowercasePattern[patternIdx]) {
-      score += (consecutiveMatches + 1) * 2;
-      consecutiveMatches++;
-      patternIdx++;
-    } else {
-      consecutiveMatches = 0;
-    }
-  }
-
-  const isMatch = patternIdx === lowercasePattern.length;
-  return {
-    isMatch,
-    score: isMatch
-      ? score / (lowercaseText.length * lowercasePattern.length)
-      : 0,
-  };
-}
-
 const Home = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [query, setQuery] = useState("");
-  const { dispatch } = useCart();
+  const { token } = useAuth();
+  const axiosClient = useAxios();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    // In a real app, this would be an API call
-    setProducts(db.products);
-    const uniqueCategories = Array.from(
-      new Set(db.products.map((product) => product.category))
-    );
-    setCategories(uniqueCategories);
-  }, []);
+  const { data, isLoading, error } = useQuery<{ products: Product[] }, Error>({
+    queryKey: ["products"],
+    queryFn: async () => {
+      const { data, status } = await axiosClient.get("/api/products");
+      if (status !== 200) throw new Error("Failed to fetch");
+      return data;
+    },
+  });
 
-  const searchResults = useMemo(() => {
-    if (!query) return [];
-
-    return db.products
-      .map((product) => {
-        const nameMatch = fuzzySearch(product.name, query);
-        const descMatch = fuzzySearch(product.description, query);
-        const categoryMatch = fuzzySearch(product.category, query);
-
-        const score = Math.max(
-          nameMatch.score * 3, // Name matches are most important
-          descMatch.score * 2, // Description matches are second
-          categoryMatch.score // Category matches are third
-        );
-
-        return {
-          product,
-          score,
-          isMatch:
-            nameMatch.isMatch || descMatch.isMatch || categoryMatch.isMatch,
-        };
-      })
-      .filter((result) => result.isMatch)
-      .sort((a, b) => b.score - a.score);
-  }, [query]);
+  const mutation = useMutation<{ products: Product[] }, Error, Product>({
+    mutationKey: ["cart"],
+    mutationFn: async (newProduct: Product) => {
+      const response = await axiosClient.post("/api/cart", {
+        product: {
+          _id: newProduct._id,
+          name: newProduct.name,
+          price: newProduct.price,
+          image: newProduct.images[0],
+        },
+        quantity: 1,
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
+    },
+  });
 
   const handleAddToCart = (e: React.MouseEvent, product: Product) => {
     e.preventDefault(); // Prevent navigation when clicking the button
-    dispatch({
-      type: "ADD_TO_CART",
-      payload: { product, quantity: 1 },
-    });
+    console.log("Add to cart clicked for product:", product);
+    mutation.mutate(product);
   };
+
+  const ProductsDisplay = (
+    <FeaturedGrid>
+      {data?.products?.map((product) => (
+        <ProductLink key={product._id} to={`/product/${product._id}`}>
+          <ProductCard whileHover={{ y: -5 }} transition={{ duration: 0.2 }}>
+            <img src={product?.images[0]} alt={product.name} />
+            <div className="content">
+              <h3>{product.name}</h3>
+              <p>{product.description}</p>
+              <p className="price">${product.price.toFixed(2)}</p>
+            </div>
+            <AddToCartButton onClick={(e) => handleAddToCart(e, product)}>
+              Add to Cart
+            </AddToCartButton>
+          </ProductCard>
+        </ProductLink>
+      ))}
+    </FeaturedGrid>
+  );
 
   return (
     <HomeContainer>
@@ -289,84 +194,10 @@ const Home = () => {
         />
       </SearchContainer>
 
-      <AnimatePresence>
-        {query && (
-          <SearchResults>
-            {searchResults.map(({ product, score }) => (
-              <Link
-                key={product.id}
-                to={`/product/${product.id}`}
-                style={{ textDecoration: "none", color: "inherit" }}
-              >
-                <SearchResultCard
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  whileHover={{ scale: 1.02 }}
-                >
-                  <img src={product.images[0]} alt={product.name} />
-                  <ResultInfo>
-                    <h3>{product.name}</h3>
-                    <p>{product.description}</p>
-                    <p className="price">${product.price.toFixed(2)}</p>
-                    <p className="match-score">
-                      Match score: {Math.round(score * 100)}%
-                    </p>
-                  </ResultInfo>
-                </SearchResultCard>
-              </Link>
-            ))}
-            {query && searchResults.length === 0 && (
-              <p>No products found matching "{query}"</p>
-            )}
-          </SearchResults>
-        )}
-      </AnimatePresence>
-
       <section>
-        <FiltersContainer>
-          <FilterButton
-            disabled={selectedCategory === "all"}
-            onClick={() => setSelectedCategory("all")}
-          >
-            All
-          </FilterButton>
-          {categories.map((category) => (
-            <FilterButton
-              key={category}
-              disabled={selectedCategory === category}
-              onClick={() => setSelectedCategory(category)}
-            >
-              {category.charAt(0).toUpperCase() + category.slice(1)}
-            </FilterButton>
-          ))}
-        </FiltersContainer>
-
-        <FeaturedGrid>
-          {(selectedCategory === "all"
-            ? products
-            : products.filter(
-                (product) => product.category === selectedCategory
-              )
-          ).map((product) => (
-            <ProductLink key={product.id} to={`/product/${product.id}`}>
-              <ProductCard
-                whileHover={{ y: -5 }}
-                transition={{ duration: 0.2 }}
-              >
-                <img src={product.images[0]} alt={product.name} />
-                <div className="content">
-                  <h3>{product.name}</h3>
-                  <p>{product.description}</p>
-                  <p className="price">${product.price.toFixed(2)}</p>
-                </div>
-                <AddToCartButton onClick={(e) => handleAddToCart(e, product)}>
-                  Add to Cart
-                </AddToCartButton>
-              </ProductCard>
-            </ProductLink>
-          ))}
-        </FeaturedGrid>
+        {isLoading && <p>Loading products...</p>}
+        {error && <p>Error loading products...</p>}
+        {data?.products && ProductsDisplay}
       </section>
     </HomeContainer>
   );

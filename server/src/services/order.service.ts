@@ -1,22 +1,16 @@
-import { Collection, ObjectId } from "mongodb";
+import { ObjectId } from "mongodb";
 import { Order } from "../models/order.model.js";
 import { AppError } from "../middlewares/error.middleware.js";
 import { collections } from "../config/db.js";
 
 export class OrderService {
-  private get ordersCollection() {
-    if (!collections.orders) {
-      throw new AppError(500, "Database not initialized");
-    }
-    return collections.orders;
-  }
   async findAll(userId?: string) {
     const query = userId ? { userId: new ObjectId(userId) } : {};
-    return this.ordersCollection.find(query).sort({ createdAt: -1 }).toArray();
+    return collections.orders?.find(query).sort({ createdAt: -1 }).toArray();
   }
 
   async findById(id: string) {
-    const order = await this.ordersCollection.findOne({
+    const order = await collections.orders?.findOne({
       _id: new ObjectId(id),
     });
     if (!order) {
@@ -29,13 +23,14 @@ export class OrderService {
     const now = new Date();
     const order: Omit<Order, "_id"> = {
       ...data,
+      userId: new ObjectId(data.userId),
       status: "pending",
       paymentStatus: "pending",
       createdAt: now,
       updatedAt: now,
     };
 
-    const result = await this.ordersCollection.insertOne(order as any);
+    const result = await collections.orders?.insertOne(order as any);
     if (!result || !result.insertedId) {
       throw new AppError(500, "Failed to create order");
     }
@@ -44,7 +39,7 @@ export class OrderService {
   }
 
   async updateStatus(id: string, status: Order["status"]) {
-    const result = await this.ordersCollection.findOneAndUpdate(
+    const result = await collections.orders?.findOneAndUpdate(
       { _id: new ObjectId(id) },
       {
         $set: {
@@ -65,7 +60,7 @@ export class OrderService {
   }
 
   async updatePaymentStatus(id: string, paymentStatus: Order["paymentStatus"]) {
-    const result = await this.ordersCollection.findOneAndUpdate(
+    const result = await collections.orders?.findOneAndUpdate(
       { _id: new ObjectId(id) },
       {
         $set: {
@@ -84,7 +79,7 @@ export class OrderService {
   }
 
   async delete(id: string) {
-    const result = await this.ordersCollection.deleteOne({
+    const result = await collections.orders?.deleteOne({
       _id: new ObjectId(id),
     });
     if (!result || result.deletedCount === 0) {

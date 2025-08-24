@@ -18,7 +18,7 @@ router.get(
   auth,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const user = await userService.findById(req.user!.userId);
+      const user = await userService.findById(req.userId || "");
       res.json(user);
     } catch (error) {
       next(error);

@@ -1,8 +1,6 @@
 import styled from "styled-components";
 import { Link } from "react-router-dom";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faShoppingCart } from "@fortawesome/free-solid-svg-icons";
-import { useCart } from "../hooks/useCart";
+import HeaderCart from "./HeaderCart";
 
 const HeaderContainer = styled.header`
   background-color: white;
@@ -41,40 +39,15 @@ const NavLink = styled(Link)`
   }
 `;
 
-const CartIcon = styled.div`
-  position: relative;
-  display: flex;
-  align-items: center;
-
-  .item-count {
-    position: absolute;
-    top: -8px;
-    right: -12px;
-    background: #2c5282;
-    color: white;
-    border-radius: 50%;
-    padding: 0.2rem 0.4rem;
-    font-size: 0.7rem;
-    font-weight: bold;
-  }
-`;
-
 const Header = () => {
-  const { state } = useCart();
-  const itemCount = state.items.reduce((acc, item) => acc + item.quantity, 0);
-
   return (
     <HeaderContainer>
       <Nav>
         <Logo to="/">LeafyCart</Logo>
         <NavLinks>
-          <NavLink to="/categories">Categories</NavLink>
           <NavLink to="/orders">Orders</NavLink>
           <NavLink to="/cart">
-            <CartIcon>
-              <FontAwesomeIcon icon={faShoppingCart} />
-              {itemCount > 0 && <span className="item-count">{itemCount}</span>}
-            </CartIcon>
+            <HeaderCart />
           </NavLink>
         </NavLinks>
       </Nav>

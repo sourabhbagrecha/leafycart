@@ -2,14 +2,17 @@ import styled from "styled-components";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { PageWrapper } from "../components/PageWrapper";
-import { useCart } from "../hooks/useCart";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import type { Cart, CartItem, CartProductInfo } from "../types";
+import { useAuth } from "../hooks/useAuth";
+import { useAxios } from "../hooks/useAxios";
 
 const CartGrid = styled.div`
   display: grid;
   gap: 1rem;
 `;
 
-const CartItem = styled(motion.div)`
+const CartItem = styled.div`
   display: grid;
   grid-template-columns: 100px 1fr auto;
   gap: 1rem;
@@ -105,63 +108,122 @@ const CheckoutButton = styled(motion.button)`
 
 export default function Cart() {
   const navigate = useNavigate();
-  const { state, dispatch } = useCart();
+  const { token } = useAuth();
+  const axiosClient = useAxios();
 
-  const handleUpdateQuantity = (productId: string, newQuantity: number) => {
-    if (newQuantity < 1) return;
-    dispatch({
-      type: "UPDATE_QUANTITY",
-      payload: { productId, quantity: newQuantity },
-    });
-  };
-
-  const handleRemoveItem = (productId: string) => {
-    dispatch({ type: "REMOVE_FROM_CART", payload: productId });
+  const handleRemoveItem = async (productId: string) => {
+    console.log("Remove item from cart:", productId);
+    try {
+      const response = await removeProductMutation.mutate(productId);
+      console.log({ response });
+    } catch (error) {
+      console.error("Error removing item:", error);
+    }
   };
 
   const handleCheckout = () => {
     navigate("/checkout");
   };
 
-  return (
+  const { data, isLoading, error, refetch } = useQuery<Cart, Error>({
+    queryKey: ["cart"],
+    queryFn: async () => {
+      const { data, status } = await axiosClient.get("/api/cart");
+      if (status !== 200) throw new Error("Failed to fetch");
+      return data;
+    },
+  });
+
+  const removeProductMutation = useMutation<unknown, Error, string>({
+    mutationKey: ["cart", "removeItem"],
+    mutationFn: async (productId: string) => {
+      await axiosClient.delete(`/api/cart/item/${productId}`);
+      refetch();
+      return;
+    },
+  });
+
+  const CartItemDisplay = ({
+    product,
+    quantity,
+  }: {
+    product: CartProductInfo;
+    quantity: number;
+  }) => {
+    const updateQuantityMutation = useMutation<
+      unknown,
+      Error,
+      { productId: string; quantity: number }
+    >({
+      mutationKey: ["cart", "updateQuantity"],
+      mutationFn: async ({ productId, quantity }) => {
+        const response = await axiosClient.patch(
+          `/api/cart/item/${productId}`,
+          { quantity }
+        );
+        refetch();
+        return response.data;
+      },
+    });
+
+    const handleUpdateQuantity = async (
+      productId: string,
+      newQuantity: number
+    ) => {
+      if (newQuantity < 1) return;
+      try {
+        const response = await updateQuantityMutation.mutate({
+          productId,
+          quantity: newQuantity,
+        });
+        console.log({ response });
+      } catch (error) {
+        console.error("Error removing item:", error);
+      }
+    };
+    return (
+      <CartItem key={product._id}>
+        <img src={product.image} alt={product.name} />
+        <ItemInfo>
+          <h3>{product.name}</h3>
+          <p>${product.price.toFixed(2)}</p>
+        </ItemInfo>
+        <ItemControls>
+          <Quantity>
+            <button
+              onClick={() => handleUpdateQuantity(product._id, quantity - 1)}
+              disabled={quantity === 1}
+              style={{ cursor: quantity === 1 ? "not-allowed" : "pointer" }}
+            >
+              -
+            </button>
+            <span>{updateQuantityMutation.isPending ? "↻" : quantity}</span>
+            <button
+              onClick={() => handleUpdateQuantity(product._id, quantity + 1)}
+            >
+              +
+            </button>
+          </Quantity>
+          <Button onClick={() => handleRemoveItem(product._id)}>Remove</Button>
+        </ItemControls>
+      </CartItem>
+    );
+  };
+
+  const CartDisplay = ({ cart }: { cart: Cart }) => (
     <PageWrapper title="Shopping Cart">
       <CartGrid>
-        {state.items.map(({ product, quantity }) => (
-          <CartItem
-            key={product.id}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <img src={product.images[0]} alt={product.name} />
-            <ItemInfo>
-              <h3>{product.name}</h3>
-              <p>${product.price.toFixed(2)}</p>
-            </ItemInfo>
-            <ItemControls>
-              <Quantity>
-                <button
-                  onClick={() => handleUpdateQuantity(product.id, quantity - 1)}
-                >
-                  -
-                </button>
-                <span>{quantity}</span>
-                <button
-                  onClick={() => handleUpdateQuantity(product.id, quantity + 1)}
-                >
-                  +
-                </button>
-              </Quantity>
-              <Button onClick={() => handleRemoveItem(product.id)}>
-                Remove
-              </Button>
-            </ItemControls>
-          </CartItem>
-        ))}
+        {cart?.items?.map(({ product, quantity }) => (
+          <CartItemDisplay
+            key={product._id}
+            product={product}
+            quantity={quantity}
+          />
+        )) || <p>Your cart is empty</p>}
       </CartGrid>
-      {state.items.length > 0 ? (
+      {cart?.items?.length ?? 0 > 0 ? (
         <Total>
-          <h3>Total: ${state.total.toFixed(2)}</h3>
+          <h3>Total: ${cart?.total?.toFixed(2)}</h3>
           <CheckoutButton
             onClick={handleCheckout}
             whileHover={{ scale: 1.05 }}
@@ -174,5 +236,13 @@ export default function Cart() {
         <p>Your cart is empty</p>
       )}
     </PageWrapper>
+  );
+
+  return (
+    <>
+      {data && <CartDisplay cart={data || ({} as Cart)} />}
+      {isLoading && <p>Loading cart...</p>}
+      {error && <p>Error loading cart</p>}
+    </>
   );
 }

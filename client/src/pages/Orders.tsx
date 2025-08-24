@@ -1,30 +1,10 @@
-import { useEffect, useState } from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { PageWrapper } from "../components/PageWrapper";
-import data from "../data/db.json";
-
-interface OrderItem {
-  productId: string;
-  quantity: number;
-  price: number;
-}
-
-interface Order {
-  id: string;
-  items: OrderItem[];
-  total: number;
-  status: string;
-  createdAt: string;
-  shippingDetails: {
-    firstName: string;
-    lastName: string;
-    address: string;
-    city: string;
-    country: string;
-    postalCode: string;
-  };
-}
+import { useAxios } from "../hooks/useAxios";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
+import type { CartItem, Order } from "../types";
 
 const OrdersContainer = styled.div`
   display: flex;
@@ -46,6 +26,34 @@ const OrderHeader = styled.div`
   margin-bottom: 1rem;
   padding-bottom: 1rem;
   border-bottom: 1px solid #e2e8f0;
+`;
+
+const ProductPreviews = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+`;
+
+const ProductPreviewImage = styled.img`
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 4px;
+`;
+
+const PreviewImageContainer = styled.div`
+  position: relative;
+`;
+
+const QuantityBadge = styled.div`
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  border-bottom-left-radius: 4px;
+  padding: 0.1rem 0.3rem;
+  font-size: 0.7rem;
 `;
 
 const OrderId = styled.span`
@@ -119,23 +127,29 @@ const Total = styled.div`
 `;
 
 export default function Orders() {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const axiosClient = useAxios();
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const ordersData = data.orders;
-        setOrders(ordersData);
-      } catch (error) {
-        console.error("Error fetching orders:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const {
+    data: orders,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["orders"],
+    queryFn: async () => {
+      const { data, status } = await axiosClient.get("/api/order");
+      console.log({ data });
+      if (status !== 200) throw new Error("Failed to fetch orders");
+      return data;
+    },
+  });
 
-    fetchOrders();
-  }, []);
+  if (error) {
+    return (
+      <PageWrapper title="Orders">
+        Error fetching orders: {error.message}
+      </PageWrapper>
+    );
+  }
 
   if (isLoading) {
     return <PageWrapper title="Orders">Loading...</PageWrapper>;
@@ -152,45 +166,61 @@ export default function Orders() {
   return (
     <PageWrapper title="Orders">
       <OrdersContainer>
-        {orders.map((order) => (
+        {orders.map((order: Order) => (
           <OrderCard
-            key={order.id}
+            key={order._id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
             <OrderHeader>
-              <OrderId>Order #{order.id}</OrderId>
+              <OrderId>Order #{order._id}</OrderId>
               <OrderStatus status={order.status}>
                 {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
               </OrderStatus>
             </OrderHeader>
 
+            <ProductPreviews>
+              {order.items.slice(0, 4).map((item: CartItem) => (
+                <Link key={item.product._id} to={`/product/${item.product._id}`}>
+                  <PreviewImageContainer>
+                    <ProductPreviewImage
+                      src={item.product.image}
+                      alt={item.product.name}
+                    />
+                    <QuantityBadge>{item.quantity}</QuantityBadge>
+                  </PreviewImageContainer>
+                </Link>
+              ))}
+            </ProductPreviews>
+
             <OrderDetails>
               <OrderItems>
-                {order.items.map((item, index) => (
-                  <OrderItem key={index}>
+                {order.items.map((item: CartItem) => (
+                  <OrderItem key={item.product._id}>
                     <span>
-                      {item.quantity}x Product #{item.productId}
+                      {item.quantity}x {item.product.name}
                     </span>
-                    <span>${(item.quantity * item.price).toFixed(2)}</span>
+                    <span>
+                      ${(item.quantity * item.product.price).toFixed(2)}
+                    </span>
                   </OrderItem>
                 ))}
               </OrderItems>
 
-              {order.shippingDetails && (
+              {order.shippingAddress && (
                 <ShippingInfo>
-                  <h4>Shipping Details</h4>
+                  <h4>Shipping Address</h4>
                   <p>
-                    {order.shippingDetails.firstName}{" "}
-                    {order.shippingDetails.lastName}
+                    {order.shippingAddress.firstName}{" "}
+                    {order.shippingAddress.lastName}
                     <br />
-                    {order.shippingDetails.address}
+                    {order.shippingAddress.address}
                     <br />
-                    {order.shippingDetails.city},{" "}
-                    {order.shippingDetails.postalCode}
+                    {order.shippingAddress.city},{" "}
+                    {order.shippingAddress.postalCode}
                     <br />
-                    {order.shippingDetails.country}
+                    {order.shippingAddress.country}
                   </p>
                 </ShippingInfo>
               )}

@@ -1,3 +1,4 @@
+import { ObjectId } from "mongodb";
 import { CartService } from "../services/cart.service.js";
 
 const cartService = new CartService();
@@ -5,8 +6,8 @@ const cartService = new CartService();
 class CartController {
   public async getCart(req: any, res: any, next: any) {
     try {
-      const cart = await cartService.getCartByUserId(req.user.userId);
-      res.json(cart);
+      const cart = await cartService.getCartByUserId(req.userId);
+      res.status(200).json(cart);
     } catch (err) {
       next(err);
     }
@@ -14,11 +15,12 @@ class CartController {
 
   public async addItem(req: any, res: any, next: any) {
     try {
-      const { productId, quantity } = req.body;
-      const cart = await cartService.addItem(req.user.userId, {
-        productId,
-        quantity,
-      });
+      const { product, quantity } = req.body;
+      const cart = await cartService.addItem(
+        req.userId,
+        { ...product, _id: new ObjectId(product._id) },
+        quantity
+      );
       res.status(200).json(cart);
     } catch (err) {
       next(err);
@@ -27,9 +29,10 @@ class CartController {
 
   public async updateItem(req: any, res: any, next: any) {
     try {
-      const { productId, quantity } = req.body;
+      const { productId } = req.params;
+      const { quantity } = req.body;
       const cart = await cartService.updateItemQuantity(
-        req.user.userId,
+        req.userId,
         productId,
         quantity
       );
@@ -42,7 +45,7 @@ class CartController {
   public async removeItem(req: any, res: any, next: any) {
     try {
       const { productId } = req.params;
-      const cart = await cartService.removeItem(req.user.userId, productId);
+      const cart = await cartService.removeItem(req.userId, productId);
       res.json(cart);
     } catch (err) {
       next(err);
@@ -51,7 +54,7 @@ class CartController {
 
   public async clearCart(req: any, res: any, next: any) {
     try {
-      const result = await cartService.clearCart(req.user.userId);
+      const result = await cartService.clearCart(req.userId);
       res.json(result);
     } catch (err) {
       next(err);

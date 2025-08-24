@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { PageWrapper } from "../components/PageWrapper";
-import { useCart } from "../hooks/useCart";
 import type { Product } from "../types";
-import db from "../data/db.json";
+import { useAxios } from "../hooks/useAxios";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const ProductContainer = styled.div`
   display: grid;
@@ -91,30 +91,62 @@ const ProductStats = styled.div`
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
-  const [product, setProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState(1);
-  const { dispatch } = useCart();
+  const axiosClient = useAxios();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    // In a real app, this would be an API call
-    const foundProduct = db.products.find((p) => p.id === id);
-    setProduct(foundProduct || null);
-  }, [id]);
+  const {
+    data: product,
+    error,
+    isLoading,
+  } = useQuery<Product, Error>({
+    queryKey: ["product", id],
+    queryFn: async () => {
+      const { data } = await axiosClient.get(`/api/products/${id}`);
+      return data;
+    },
+  });
 
-  if (!product) {
+  const mutation = useMutation<{ products: Product[] }, Error, Product>({
+    mutationKey: ["cart"],
+    mutationFn: async (newProduct: Product) => {
+      const response = await axiosClient.post("/api/cart", {
+        product: {
+          _id: newProduct._id,
+          name: newProduct.name,
+          price: newProduct.price,
+          image: newProduct.images[0],
+        },
+        quantity: 1,
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
+    },
+  });
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent navigation when clicking the button
+    console.log("Add to cart clicked for product:", product);
+    mutation.mutate(product!);
+  };
+
+  if (isLoading) {
+    return (
+      <PageWrapper title="Loading...">
+        <p>Loading product details...</p>
+      </PageWrapper>
+    );
+  }
+
+  if (!product || error) {
     return (
       <PageWrapper title="Product Not Found">
         <p>Sorry, we couldn't find the product you're looking for.</p>
       </PageWrapper>
     );
   }
-
-  const handleAddToCart = () => {
-    dispatch({
-      type: "ADD_TO_CART",
-      payload: { product, quantity },
-    });
-  };
 
   return (
     <PageWrapper title={product.name}>

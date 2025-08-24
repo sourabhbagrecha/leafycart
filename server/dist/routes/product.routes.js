@@ -16,7 +16,7 @@ router.get("/", async (req, res, next) => {
             page: page ? parseInt(page) : undefined,
             limit: limit ? parseInt(limit) : undefined,
         });
-        res.json(products);
+        res.status(200).json(products);
     }
     catch (error) {
         next(error);

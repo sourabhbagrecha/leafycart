@@ -1,5 +1,6 @@
 export interface Product {
   id: string;
+  _id: string;
   name: string;
   description: string;
   price: number;
@@ -18,21 +19,6 @@ export interface User {
   orders: Order[];
 }
 
-export interface Order {
-  id: string;
-  userId: string;
-  items: OrderItem[];
-  total: number;
-  status: "pending" | "processing" | "shipped" | "delivered";
-  createdAt: string;
-}
-
-export interface OrderItem {
-  productId: string;
-  quantity: number;
-  price: number;
-}
-
 export interface Review {
   id: string;
   userId: string;
@@ -42,14 +28,48 @@ export interface Review {
   createdAt: string;
 }
 
-export interface Category {
-  id: string;
+export interface CartProductInfo {
+  _id: string;
   name: string;
-  description: string;
+  price: number;
   image: string;
 }
 
 export interface CartItem {
-  product: Product;
+  product: CartProductInfo;
   quantity: number;
+}
+
+export interface Cart {
+  _id?: string;
+  userId: string | string;
+  items: CartItem[];
+  updatedAt?: Date | string;
+  total: number;
+}
+
+interface PaymentInfo {
+  cardNumber: string;
+  cardExpiry: string;
+  cardCvc: string;
+}
+
+interface ShippingAddress {
+  firstName: string;
+  lastName: string;
+  email: string;
+  address: string;
+  city: string;
+  country: string;
+  postalCode: string;
+}
+
+export interface Order {
+  _id: string;
+  items: CartItem[];
+  total: number;
+  status: "pending" | "processing" | "shipped" | "delivered" | string;
+  createdAt: string;
+  shippingAddress: ShippingAddress;
+  paymentInfo: PaymentInfo;
 }
