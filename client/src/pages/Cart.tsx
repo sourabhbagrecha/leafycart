@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { PageWrapper } from "../components/PageWrapper";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type { Cart, CartItem, CartProductInfo } from "../types";
-import { useAuth } from "../hooks/useAuth";
 import { useAxios } from "../hooks/useAxios";
 
 const CartGrid = styled.div`
@@ -108,7 +107,6 @@ const CheckoutButton = styled(motion.button)`
 
 export default function Cart() {
   const navigate = useNavigate();
-  const { token } = useAuth();
   const axiosClient = useAxios();
 
   const handleRemoveItem = async (productId: string) => {
