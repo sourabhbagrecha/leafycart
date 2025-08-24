@@ -1,5 +1,8 @@
 import { ObjectId } from "mongodb";
 import { collections } from "../config/db.js";
+import { CartService } from "../services/cart.service.js";
+
+const cartService = new CartService();
 
 class UserController {
   public async createNewUser() {
@@ -60,6 +63,9 @@ class UserController {
       user = { ...tempUser, _id: result.insertedId };
     }
 
+    console.log({ user });
+    const cart = await cartService.createOrGetCart(user!._id.toString());
+    console.log({ cart });
     return user;
   }
 

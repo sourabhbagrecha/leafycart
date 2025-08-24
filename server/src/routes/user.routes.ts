@@ -12,37 +12,29 @@ const userController = new UserController();
 
 const secret = process.env.SECRET || "secret";
 
-// Get current user profile
-router.get(
-  "/me",
-  auth,
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const user = await userService.findById(req.userId || "");
-      res.json(user);
-    } catch (error) {
-      next(error);
-    }
-  }
-);
+router.get("/register", async (req, res) => {
+  let user = await userController.createNewUser();
 
-// Get user by id (admin only)
-router.get(
-  "/:id",
-  auth,
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const user = await userService.findById(req.params.id);
-      res.json(user);
-    } catch (error) {
-      next(error);
-    }
-  }
-);
+  // Generate a JWT with algorithm none
+  const accessToken = jsonwebtoken.sign(
+    {
+      sub: user._id,
+      name: user.name,
+      isAdmin: user.isAdmin,
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 365,
+    },
+    secret,
+    { algorithm: "HS256" }
+  );
+
+  const response = { accessToken };
+
+  res.json(response).status(200);
+});
 
 router.get("/login/:username", async (req, res) => {
   const username = req?.params?.username;
-  console.log({ username });
   let user;
 
   if (username) {

@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import type { Product } from "../types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "../hooks/useAuth";
 import { useAxios } from "../hooks/useAxios";
 
 const HomeContainer = styled.div`
@@ -121,7 +120,6 @@ const ProductLink = styled(Link)`
 
 const Home = () => {
   const [query, setQuery] = useState("");
-  const { token } = useAuth();
   const axiosClient = useAxios();
   const queryClient = useQueryClient();
 

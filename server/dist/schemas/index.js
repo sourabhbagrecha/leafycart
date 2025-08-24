@@ -77,6 +77,7 @@ export const orderSchema = {
                 postalCode: z.string(),
                 country: z.string(),
             }),
+            paymentInfo: z.object({}),
         }),
     }),
     updateStatus: z.object({

@@ -30,6 +30,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     initializeAuth();
     return () => {};
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const initializeAuth = async () => {
@@ -38,7 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const storedToken = localStorage.getItem("authToken");
       console.log({ storedToken });
 
-      if (storedToken) {
+      if (storedToken && storedToken !== "undefined") {
         setToken(storedToken);
         // Optionally fetch user data
       } else {
@@ -63,9 +64,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const createAnonymousUser = async () => {
     try {
       const response: Response = await fetch(
-        `http://localhost:3000/api/users/login/${encodeURI(
-          "Ignominious Platypus"
-        )}`,
+        `http://localhost:3000/api/users/register`,
         {
           method: "GET",
           headers: {
