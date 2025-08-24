@@ -1,4 +1,4 @@
-import{j as t,d as o}from"./index-BLa0kxBv.js";import{P as i}from"./PageWrapper-D3vWYtXS.js";import{m as a}from"./proxy-Bg37ztZW.js";const n=o.div`
+import{j as t,d as o}from"./index-B4Djqj5h.js";import{P as i}from"./PageWrapper-CaP6JYSj.js";import{m as a}from"./proxy-DN39KLzX.js";const n=o.div`
   max-width: 800px;
   margin: 0 auto;
 `,s=o(a.div)`

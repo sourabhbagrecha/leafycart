@@ -1,4 +1,4 @@
-import{b as F,u as E,r as m,j as e,d}from"./index-BLa0kxBv.js";import{P as j}from"./PageWrapper-D3vWYtXS.js";import{m as b}from"./proxy-Bg37ztZW.js";const k=d.div`
+import{b as F,u as E,r as m,j as e,d}from"./index-B4Djqj5h.js";import{P as j}from"./PageWrapper-CaP6JYSj.js";import{m as b}from"./proxy-DN39KLzX.js";const k=d.div`
   display: grid;
   grid-template-columns: 1fr 400px;
   gap: 2rem;
