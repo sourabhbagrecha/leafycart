@@ -19,17 +19,17 @@ const FiltersContainer = styled.div`
   flex-wrap: wrap;
 `;
 
-const FilterButton = styled.button<{ active: boolean }>`
+const FilterButton = styled.button<{ disabled: boolean }>`
   padding: 0.5rem 1rem;
   border: 1px solid #e2e8f0;
   border-radius: 4px;
-  background: ${(props) => (props.active ? "#2c5282" : "white")};
-  color: ${(props) => (props.active ? "white" : "#2d3748")};
+  background: ${(props) => (props.disabled ? "#2c5282" : "white")};
+  color: ${(props) => (props.disabled ? "white" : "#2d3748")};
   cursor: pointer;
   transition: all 0.2s;
 
   &:hover {
-    background: ${(props) => (props.active ? "#2a4365" : "#f7fafc")};
+    background: ${(props) => (props.disabled ? "#2a4365" : "#f7fafc")};
   }
 `;
 
@@ -326,7 +326,7 @@ const Home = () => {
       <section>
         <FiltersContainer>
           <FilterButton
-            active={selectedCategory === "all"}
+            disabled={selectedCategory === "all"}
             onClick={() => setSelectedCategory("all")}
           >
             All
@@ -334,7 +334,7 @@ const Home = () => {
           {categories.map((category) => (
             <FilterButton
               key={category}
-              active={selectedCategory === category}
+              disabled={selectedCategory === category}
               onClick={() => setSelectedCategory(category)}
             >
               {category.charAt(0).toUpperCase() + category.slice(1)}

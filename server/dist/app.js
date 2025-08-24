@@ -8,19 +8,20 @@ const app = express();
 app.use(cors());
 app.use(morgan("dev"));
 app.use(express.json());
+const routes = await import("./routes/index.js");
 // Start server
 const startServer = async () => {
     try {
         // Initialize database first
         await connectToDatabase(process.env.MONGODB_URI);
         // Import routes and middleware after database initialization
-        const routes = await import("./routes/index.js");
         const { errorHandler } = await import("./middlewares/error.middleware.js");
-        // Routes
+        // Route
+        app.use("/api/users", routes.userRoutes);
         app.use("/health", routes.healthRoutes);
         app.use("/api/products", routes.productRoutes);
-        app.use("/api/users", routes.userRoutes);
         app.use("/api/orders", routes.orderRoutes);
+        app.use("/api/cart", routes.cartRoutes);
         // Error handling
         app.use(errorHandler);
         app.listen(config.port, () => {

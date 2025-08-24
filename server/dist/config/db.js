@@ -22,15 +22,17 @@ export async function connectToDatabase(uri) {
     });
     try {
         await client.connect();
-        console.log(`Connected to MongoDB`);
+        console.log(`Connected to MongoDB (${process.env.DATABASE_NAME})`);
         const db = client.db(process.env.DATABASE_NAME);
         databases.library = db;
         const usersCollection = db.collection("users");
         const productsCollection = db.collection("products");
         const ordersCollection = db.collection("orders");
+        const cartsCollection = db.collection("carts");
         collections.users = usersCollection;
         collections.products = productsCollection;
         collections.orders = ordersCollection;
+        collections.carts = cartsCollection;
         return client;
     }
     catch (err) {

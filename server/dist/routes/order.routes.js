@@ -6,7 +6,7 @@ import { orderSchema } from "../schemas/index.js";
 const router = Router();
 const orderService = new OrderService();
 // Get all orders (admin gets all, user gets their own)
-router.get("/", auth(), async (req, res, next) => {
+router.get("/", auth, async (req, res, next) => {
     try {
         const orders = await orderService.findAll(req.user.role === "admin" ? undefined : req.user.userId);
         res.json(orders);
@@ -16,7 +16,7 @@ router.get("/", auth(), async (req, res, next) => {
     }
 });
 // Get single order
-router.get("/:id", auth(), async (req, res, next) => {
+router.get("/:id", auth, async (req, res, next) => {
     try {
         const order = await orderService.findById(req.params.id);
         // Check if user has permission to view this order
@@ -33,7 +33,7 @@ router.get("/:id", auth(), async (req, res, next) => {
     }
 });
 // Create order
-router.post("/", auth(), validate(orderSchema.create), async (req, res, next) => {
+router.post("/", auth, validate(orderSchema.create), async (req, res, next) => {
     try {
         const order = await orderService.create({
             ...req.body,
@@ -46,7 +46,7 @@ router.post("/", auth(), validate(orderSchema.create), async (req, res, next) =>
     }
 });
 // Update order status (admin only)
-router.patch("/:id/status", auth(["admin"]), validate(orderSchema.updateStatus), async (req, res, next) => {
+router.patch("/:id/status", auth, validate(orderSchema.updateStatus), async (req, res, next) => {
     try {
         const order = await orderService.updateStatus(req.params.id, req.body.status);
         res.json(order);
@@ -56,7 +56,7 @@ router.patch("/:id/status", auth(["admin"]), validate(orderSchema.updateStatus),
     }
 });
 // Update payment status (admin only)
-router.patch("/:id/payment", auth(["admin"]), validate(orderSchema.updatePaymentStatus), async (req, res, next) => {
+router.patch("/:id/payment", auth, validate(orderSchema.updatePaymentStatus), async (req, res, next) => {
     try {
         const order = await orderService.updatePaymentStatus(req.params.id, req.body.paymentStatus);
         res.json(order);
@@ -66,7 +66,7 @@ router.patch("/:id/payment", auth(["admin"]), validate(orderSchema.updatePayment
     }
 });
 // Delete order (admin only)
-router.delete("/:id", auth(["admin"]), async (req, res, next) => {
+router.delete("/:id", auth, async (req, res, next) => {
     try {
         await orderService.delete(req.params.id);
         res.status(204).end();

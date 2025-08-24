@@ -3,3 +3,4 @@ export { healthRoutes } from "./health.routes.js";
 export { productRoutes } from "./product.routes.js";
 export { userRoutes } from "./user.routes.js";
 export { orderRoutes } from "./order.routes.js";
+export { cartRoutes } from "./cart.routes.js";

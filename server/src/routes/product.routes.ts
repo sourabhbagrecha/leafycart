@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { auth } from "../middlewares/auth.middleware.js";
 import { validate } from "../middlewares/validate.middleware.js";
@@ -9,7 +9,7 @@ const router = Router();
 const productService = new ProductService();
 
 // Get all products with filtering
-router.get("/", async (req, res, next) => {
+router.get("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { category, search, sort, page, limit } = req.query;
     const products = await productService.findAll({
@@ -26,7 +26,7 @@ router.get("/", async (req, res, next) => {
 });
 
 // Get single product
-router.get("/:id", async (req, res, next) => {
+router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const product = await productService.findById(req.params.id);
     res.json(product);
@@ -38,9 +38,9 @@ router.get("/:id", async (req, res, next) => {
 // Create product (admin only)
 router.post(
   "/",
-  auth(["admin"]),
+  auth,
   validate(productSchema.create),
-  async (req, res, next) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     try {
       const product = await productService.create(req.body);
       res.status(201).json(product);
@@ -53,9 +53,9 @@ router.post(
 // Update product (admin only)
 router.patch(
   "/:id",
-  auth(["admin"]),
+  auth,
   validate(productSchema.update),
-  async (req, res, next) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     try {
       const product = await productService.update(req.params.id, req.body);
       res.json(product);
@@ -66,21 +66,25 @@ router.patch(
 );
 
 // Delete product (admin only)
-router.delete("/:id", auth(["admin"]), async (req, res, next) => {
-  try {
-    await productService.delete(req.params.id);
-    res.status(204).end();
-  } catch (error) {
-    next(error);
+router.delete(
+  "/:id",
+  auth,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await productService.delete(req.params.id);
+      res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 // Add rating to product
 router.post(
   "/:id/ratings",
-  auth(["user"]),
+  auth,
   validate(productSchema.addRating),
-  async (req, res, next) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     try {
       const product = await productService.addRating();
       res.json(product);

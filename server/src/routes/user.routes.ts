@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import jsonwebtoken from "jsonwebtoken";
 
 import { auth } from "../middlewares/auth.middleware.js";
@@ -12,38 +12,37 @@ const userController = new UserController();
 
 const secret = process.env.SECRET || "secret";
 
-// Get all users (admin only)
-router.get("/", auth(["admin"]), async (req, res, next) => {
-  try {
-    const users = await userService.findAll();
-    res.json(users);
-  } catch (error) {
-    next(error);
-  }
-});
-
 // Get current user profile
-router.get("/me", auth(), async (req, res, next) => {
-  try {
-    const user = await userService.findById(req.user!.userId);
-    res.json(user);
-  } catch (error) {
-    next(error);
+router.get(
+  "/me",
+  auth,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const user = await userService.findById(req.user!.userId);
+      res.json(user);
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 // Get user by id (admin only)
-router.get("/:id", auth(["admin"]), async (req, res, next) => {
-  try {
-    const user = await userService.findById(req.params.id);
-    res.json(user);
-  } catch (error) {
-    next(error);
+router.get(
+  "/:id",
+  auth,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const user = await userService.findById(req.params.id);
+      res.json(user);
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
-router.get("/login/:username?", async (req, res) => {
+router.get("/login/:username", async (req, res) => {
   const username = req?.params?.username;
+  console.log({ username });
   let user;
 
   if (username) {
@@ -55,7 +54,7 @@ router.get("/login/:username?", async (req, res) => {
   }
 
   // Generate a JWT with algorithm none
-  const jwt = jsonwebtoken.sign(
+  const accessToken = jsonwebtoken.sign(
     {
       sub: user._id,
       name: user.name,
@@ -67,9 +66,9 @@ router.get("/login/:username?", async (req, res) => {
     { algorithm: "HS256" }
   );
 
-  const response = { jwt };
+  const response = { accessToken };
 
-  res.send(response).status(200);
+  res.json(response).status(200);
 });
 
 export const userRoutes = router;

@@ -33,7 +33,7 @@ router.get("/:id", async (req, res, next) => {
     }
 });
 // Create product (admin only)
-router.post("/", auth(["admin"]), validate(productSchema.create), async (req, res, next) => {
+router.post("/", auth, validate(productSchema.create), async (req, res, next) => {
     try {
         const product = await productService.create(req.body);
         res.status(201).json(product);
@@ -43,7 +43,7 @@ router.post("/", auth(["admin"]), validate(productSchema.create), async (req, re
     }
 });
 // Update product (admin only)
-router.patch("/:id", auth(["admin"]), validate(productSchema.update), async (req, res, next) => {
+router.patch("/:id", auth, validate(productSchema.update), async (req, res, next) => {
     try {
         const product = await productService.update(req.params.id, req.body);
         res.json(product);
@@ -53,7 +53,7 @@ router.patch("/:id", auth(["admin"]), validate(productSchema.update), async (req
     }
 });
 // Delete product (admin only)
-router.delete("/:id", auth(["admin"]), async (req, res, next) => {
+router.delete("/:id", auth, async (req, res, next) => {
     try {
         await productService.delete(req.params.id);
         res.status(204).end();
@@ -63,7 +63,7 @@ router.delete("/:id", auth(["admin"]), async (req, res, next) => {
     }
 });
 // Add rating to product
-router.post("/:id/ratings", auth(["user"]), validate(productSchema.addRating), async (req, res, next) => {
+router.post("/:id/ratings", auth, validate(productSchema.addRating), async (req, res, next) => {
     try {
         const product = await productService.addRating();
         res.json(product);
