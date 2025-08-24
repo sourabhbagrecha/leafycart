@@ -1,11 +1,9 @@
 import { Router } from "express";
 import jsonwebtoken from "jsonwebtoken";
 import UserController from "../controllers/user.controller.js";
-import { UserService } from "../services/user.service.js";
 const router = Router();
-const userService = new UserService();
 const userController = new UserController();
-const secret = process.env.SECRET || "secret";
+const secret = process.env.JWT_SECRET || "secret";
 router.get("/register", async (req, res) => {
     let user = await userController.createNewUser();
     // Generate a JWT with algorithm none

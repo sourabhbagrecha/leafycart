@@ -1,10 +1,14 @@
+import { config as dotenvConfig } from "dotenv";
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
-import { config } from "./config/index.js";
 import { connectToDatabase } from "./config/db.js";
 
+dotenvConfig();
+
 const app = express();
+
+const PORT = process.env.PORT || 3000;
 
 // Middlewares
 app.use(cors());
@@ -31,8 +35,8 @@ const startServer = async () => {
     // Error handling
     app.use(errorHandler);
 
-    app.listen(config.port, () => {
-      console.log(`Server running on port ${config.port}`);
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
     });
   } catch (error) {
     console.error("Failed to start server:", error);

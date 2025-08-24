@@ -6,7 +6,7 @@ export const auth = (req, res, next) => {
         if (!token) {
             throw new AppError(401, "Authentication required");
         }
-        const secret = process.env.SECRET || "secret";
+        const secret = process.env.JWT_SECRET || "secret";
         const decoded = jwt.verify(token, secret);
         if (typeof decoded === "object" && decoded !== null && "sub" in decoded) {
             req.userId = decoded.sub;

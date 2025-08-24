@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { config } from "../config/index.js";
 import { AppError } from "./error.middleware.js";
 
 interface JwtPayload {
@@ -22,7 +21,7 @@ export const auth = (req: Request, res: Response, next: NextFunction) => {
     if (!token) {
       throw new AppError(401, "Authentication required");
     }
-    const secret = process.env.SECRET || "secret";
+    const secret = process.env.JWT_SECRET || "secret";
     const decoded = jwt.verify(token, secret);
 
     if (typeof decoded === "object" && decoded !== null && "sub" in decoded) {

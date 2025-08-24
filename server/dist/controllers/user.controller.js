@@ -59,9 +59,7 @@ class UserController {
             }
             user = { ...tempUser, _id: result.insertedId };
         }
-        console.log({ user });
-        const cart = await cartService.createOrGetCart(user._id.toString());
-        console.log({ cart });
+        await cartService.createOrGetCart(user._id.toString());
         return user;
     }
     async getUser(username) {

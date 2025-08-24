@@ -12,7 +12,7 @@ export const collections: {
 } = {};
 
 export const databases: {
-  library?: mongodb.Db;
+  LeafyCart?: mongodb.Db;
 } = {};
 
 export async function connectToDatabase(uri?: string) {
@@ -43,7 +43,7 @@ export async function connectToDatabase(uri?: string) {
     console.log(`Connected to MongoDB (${process.env.DATABASE_NAME})`);
 
     const db = client.db(process.env.DATABASE_NAME);
-    databases.library = db;
+    databases.LeafyCart = db;
 
     const usersCollection = db.collection<User>("users");
     const productsCollection = db.collection<Product>("products");
