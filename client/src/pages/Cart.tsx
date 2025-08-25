@@ -186,9 +186,14 @@ export default function Cart() {
         <ItemControls>
           <Quantity>
             <button
-              onClick={() => handleUpdateQuantity(product._id, quantity - 1)}
-              disabled={quantity === 1}
-              style={{ cursor: quantity === 1 ? "not-allowed" : "pointer" }}
+              onClick={() => {
+                if (quantity === 1) {
+                  handleRemoveItem(product._id); // remove item from cart
+                } else {
+                  handleUpdateQuantity(product._id, quantity - 1); // just decrease qty
+                }
+              }}
+              style={{ cursor: "pointer" }}
             >
               -
             </button>
