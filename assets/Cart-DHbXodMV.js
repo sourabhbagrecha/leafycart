@@ -1,4 +1,4 @@
-import{e as v,u as k,b as w,j as e,d as i}from"./index-Du78YUTh.js";import{P as C}from"./PageWrapper-B2yhRZaG.js";import{u}from"./useMutation-DFJr2Iya.js";import{m as F}from"./proxy-ByM0UsIv.js";const I=i.div`
+import{e as v,u as k,b as w,j as e,d as i}from"./index-uOv3fffV.js";import{P as C}from"./PageWrapper-DzuVBoVJ.js";import{u}from"./useMutation-DUhU1EvS.js";import{m as F}from"./proxy-DQ9R4Xlz.js";const I=i.div`
   display: grid;
   gap: 1rem;
 `,E=i.div`

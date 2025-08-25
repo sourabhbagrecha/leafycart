@@ -1,4 +1,4 @@
-import{u as c,b as p,j as e,L as l,d as s}from"./index-Du78YUTh.js";import{P as n}from"./PageWrapper-B2yhRZaG.js";import{m as u}from"./proxy-ByM0UsIv.js";const x=s.div`
+import{u as c,b as p,j as e,L as l,d as s}from"./index-uOv3fffV.js";import{P as n}from"./PageWrapper-DzuVBoVJ.js";import{m as u}from"./proxy-DQ9R4Xlz.js";const x=s.div`
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
