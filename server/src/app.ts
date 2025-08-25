@@ -8,8 +8,6 @@ dotenvConfig();
 
 const app = express();
 
-const PORT = process.env.PORT || 3000;
-
 // Middlewares
 app.use(cors());
 app.use(morgan("dev"));
@@ -35,7 +33,7 @@ const startServer = async () => {
     // Error handling
     app.use(errorHandler);
 
-    app.listen(PORT, () => {
+    app.listen(process.env.PORT || 3000, () => {
       console.log(`Server running`);
     });
   } catch (error) {
