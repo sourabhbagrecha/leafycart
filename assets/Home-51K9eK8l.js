@@ -1,4 +1,4 @@
-import{r as x,u as h,a as g,b as f,j as r,d as t,L as y}from"./index-uOv3fffV.js";import{u as b}from"./useMutation-DUhU1EvS.js";import{m as j}from"./proxy-DQ9R4Xlz.js";const v=t.div`
+import{r as x,u as h,a as g,b as f,j as r,d as t,L as y}from"./index-Dio7GKzt.js";import{u as b}from"./useMutation-DOHl85Kj.js";import{m as j}from"./proxy-CYE6sKoy.js";const v=t.div`
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
