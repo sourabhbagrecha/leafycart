@@ -7,7 +7,8 @@ import axios, {
 import { useAuth } from "./useAuth";
 
 export const axiosInstance: AxiosInstance = axios.create({
-  baseURL: process.env.NODE_ENV === "production" ? "" : "http://localhost:3000",
+  baseURL:
+    process.env.NODE_ENV === "development" ? "http://localhost:3000" : "",
 });
 
 export function useAxios(): AxiosInstance {
