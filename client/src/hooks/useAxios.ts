@@ -6,16 +6,12 @@ import axios, {
 } from "axios";
 import { useAuth } from "./useAuth";
 
-let axiosInstance: AxiosInstance | null = null;
+export const axiosInstance: AxiosInstance = axios.create({
+  baseURL: process.env.NODE_ENV === "production" ? "" : "http://localhost:3000",
+});
 
 export function useAxios(): AxiosInstance {
   const { token } = useAuth();
-
-  if (!axiosInstance) {
-    axiosInstance = axios.create({
-      baseURL: "http://localhost:3000",
-    });
-  }
 
   useEffect(() => {
     const reqInterceptor = axiosInstance!.interceptors.request.use(

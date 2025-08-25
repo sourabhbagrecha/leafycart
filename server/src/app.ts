@@ -3,6 +3,11 @@ import express from "express";
 import cors from "cors";
 import morgan from "morgan";
 import { connectToDatabase } from "./config/db.js";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 dotenvConfig();
 
@@ -33,8 +38,17 @@ const startServer = async () => {
     // Error handling
     app.use(errorHandler);
 
+    // Serve static files from React (Vite build)
+    app.use(express.static(path.join(__dirname, "public")));
+
+    // Catch-all route (for SPA routing)
+    app.get("*", (_req, res) => {
+      res.sendFile(path.join(__dirname, "public", "index.html"));
+    });
+
     app.listen(process.env.PORT || 3000, () => {
       console.log(`Server running`);
+      console.log("Serving static from:", path.join(__dirname, "public"));
     });
   } catch (error) {
     console.error("Failed to start server:", error);

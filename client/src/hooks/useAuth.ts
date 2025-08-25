@@ -1,6 +1,7 @@
 import React from "react";
 import { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
+import { axiosInstance } from "./useAxios";
 
 interface AuthContextType {
   token: string | null;
@@ -62,19 +63,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const createAnonymousUser = async () => {
     try {
-      const response: Response = await fetch(
-        `http://localhost:3000/api/users/register`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const { data, status } = await axiosInstance.get("/api/users/register");
 
-      if (!response) throw new Error("Failed to create anonymous user");
+      if (status !== 200) throw new Error("Failed to create anonymous user");
 
-      const { accessToken: newToken } = await response.json();
+      const { accessToken: newToken } = await data;
 
       // Store token
       localStorage.setItem("authToken", newToken);

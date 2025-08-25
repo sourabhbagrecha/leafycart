@@ -7,7 +7,7 @@ export default function App() {
   const queryClient = new QueryClient();
   return (
     <QueryClientProvider client={queryClient}>
-      <Router basename="/leafycart">
+      <Router basename="/">
         <AuthProvider>
           <MainApp />
         </AuthProvider>

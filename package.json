@@ -1,0 +1,11 @@
+{
+  "name": "mern-app",
+  "private": true,
+  "scripts": {
+    "build": "npm run build --prefix server",
+    "build:client": "npm install --prefix client && npm run build --prefix client",
+    "build:server": "npm install --prefix server && npm run build --prefix server",
+    "postbuild": "cp -r client/build server/dist/public",
+    "start": "npm start --prefix server"
+  }
+}
