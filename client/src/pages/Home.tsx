@@ -9,12 +9,10 @@ import { useAxios } from "../hooks/useAxios";
 const HomeContainer = styled.div`
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
 `;
 
 const Hero = styled.section`
   text-align: center;
-  margin-bottom: 2rem;
 
   h1 {
     font-size: 2.5rem;

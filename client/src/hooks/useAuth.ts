@@ -58,12 +58,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Fallback: create anonymous user
       await createAnonymousUser();
     } finally {
-      function sleep(ms: number) {
-        return new Promise((resolve) => {
-          setTimeout(resolve, ms);
-        });
-      }
-      await sleep(1000);
       setLoading(false);
     }
   };

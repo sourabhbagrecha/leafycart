@@ -1,10 +1,13 @@
 import { config as dotenvConfig } from "dotenv";
-import express from "express";
+import express, { Request, Response } from "express";
 import cors from "cors";
 import morgan from "morgan";
 import { connectToDatabase } from "./config/db.js";
 import path from "path";
 import { fileURLToPath } from "url";
+import { callAgent } from "./agents/agent.js";
+import { auth } from "./middlewares/auth.middleware.js";
+import { ConversationService } from "./services/conversation.service.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,7 +26,7 @@ const routes = await import("./routes/index.js");
 const startServer = async () => {
   try {
     // Initialize database first
-    await connectToDatabase(process.env.MONGODB_URI);
+    const client = await connectToDatabase(process.env.MONGODB_URI);
 
     // Import routes and middleware after database initialization
     const { errorHandler } = await import("./middlewares/error.middleware.js");
@@ -35,8 +38,80 @@ const startServer = async () => {
     app.use("/api/review", routes.reviewRoutes);
     app.use("/api/order", routes.orderRoutes);
     app.use("/api/cart", routes.cartRoutes);
+    app.use("/api/conversations", routes.conversationRoutes);
     // Error handling
     app.use(errorHandler);
+
+    app.post("/api/agent", auth, async (req: Request, res: Response) => {
+      const initialMessage = req.body?.message ?? "";
+      const threadId = Date.now().toString(); // Simple thread ID generation
+      const conversationService = new ConversationService();
+      
+      try {
+        // Call the agent
+        const response = await callAgent(client, initialMessage, threadId, req.userId);
+        
+        // Create conversation record
+        await conversationService.createConversation(req.userId!, threadId, initialMessage);
+        
+        // Add both user and assistant messages
+        await conversationService.addMessage(threadId, req.userId!, {
+          id: Date.now().toString(),
+          content: initialMessage,
+          role: "user",
+          timestamp: new Date()
+        });
+        
+        await conversationService.addMessage(threadId, req.userId!, {
+          id: (Date.now() + 1).toString(),
+          content: typeof response === 'string' ? response : JSON.stringify(response),
+          role: "assistant", 
+          timestamp: new Date()
+        });
+        
+        res.json({ threadId, response });
+      } catch (error) {
+        console.error("Error starting conversation:", error);
+        res.status(500).json({ error: "Internal server error" });
+      }
+    });
+
+    // API endpoint to send a message in an existing conversation
+    // curl -X POST -H "Content-Type: application/json" -d '{"message": "What team members did you recommend?"}' http://localhost:3000/chat/123456789
+    app.post(
+      "/api/agent/:threadId",
+      auth,
+      async (req: Request, res: Response) => {
+        const { threadId } = req.params;
+        const { message } = req.body;
+        const conversationService = new ConversationService();
+        
+        try {
+          // Call the agent
+          const response = await callAgent(client, message, threadId, req.userId);
+          
+          // Add both user and assistant messages to conversation history
+          await conversationService.addMessage(threadId, req.userId!, {
+            id: Date.now().toString(),
+            content: message,
+            role: "user",
+            timestamp: new Date()
+          });
+          
+          await conversationService.addMessage(threadId, req.userId!, {
+            id: (Date.now() + 1).toString(),
+            content: typeof response === 'string' ? response : JSON.stringify(response),
+            role: "assistant",
+            timestamp: new Date()
+          });
+          
+          res.json({ response });
+        } catch (error) {
+          console.error("Error in chat:", error);
+          res.status(500).json({ error: "Internal server error" });
+        }
+      }
+    );
 
     // Serve static files from React (Vite build)
     app.use(express.static(path.join(__dirname, "public")));

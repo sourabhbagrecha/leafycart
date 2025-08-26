@@ -3,12 +3,15 @@ import { User } from "../models/user.model.js";
 import { Product } from "../models/product.model.js";
 import { Order } from "../models/order.model.js";
 import { Cart } from "../models/cart.model.js";
+import { Conversation } from "../models/conversation.model.js";
 
 export const collections: {
   users?: mongodb.Collection<User>;
   products?: mongodb.Collection<Product>;
   orders?: mongodb.Collection<Order>;
   carts?: mongodb.Collection<Cart>;
+  conversations?: mongodb.Collection<Conversation>;
+  agents?: mongodb.Collection;
 } = {};
 
 export const databases: {
@@ -45,15 +48,12 @@ export async function connectToDatabase(uri?: string) {
     const db = client.db(process.env.DATABASE_NAME);
     databases.LeafyCart = db;
 
-    const usersCollection = db.collection<User>("users");
-    const productsCollection = db.collection<Product>("products");
-    const ordersCollection = db.collection<Order>("orders");
-    const cartsCollection = db.collection<Cart>("carts");
-
-    collections.users = usersCollection;
-    collections.products = productsCollection;
-    collections.orders = ordersCollection;
-    collections.carts = cartsCollection;
+    collections.users = db.collection<User>("users");
+    collections.products = db.collection<Product>("products");
+    collections.orders = db.collection<Order>("orders");
+    collections.carts = db.collection<Cart>("carts");
+    collections.conversations = db.collection<Conversation>("conversations");
+    collections.agents = db.collection("agents");
 
     return client;
   } catch (err) {
