@@ -4,3 +4,4 @@ export { productRoutes } from "./product.routes.js";
 export { userRoutes } from "./user.routes.js";
 export { orderRoutes } from "./order.routes.js";
 export { cartRoutes } from "./cart.routes.js";
+export { reviewRoutes } from "./review.routes.js";

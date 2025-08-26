@@ -148,7 +148,7 @@ const Home = () => {
   const { data, isLoading, error } = useQuery<{ products: Product[] }, Error>({
     queryKey: ["products"],
     queryFn: async () => {
-      const { data, status } = await axiosClient.get("/api/products");
+      const { data, status } = await axiosClient.get("/api/product");
       if (status !== 200) throw new Error("Failed to fetch");
       return data;
     },
@@ -182,7 +182,7 @@ const Home = () => {
     const fullStars = Math.floor(rating);
     const hasHalfStar = rating % 1 !== 0;
     const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-    
+
     return (
       <>
         {"★".repeat(fullStars)}
@@ -202,9 +202,12 @@ const Home = () => {
               <h3>{product.name}</h3>
               {product.numReviews > 0 ? (
                 <RatingDisplay>
-                  <span className="stars">{renderStars(product.avgRating)}</span>
+                  <span className="stars">
+                    {renderStars(product.avgRating)}
+                  </span>
                   <span className="rating-text">
-                    {product.avgRating.toFixed(1)} ({product.numReviews} review{product.numReviews !== 1 ? 's' : ''})
+                    {product.avgRating.toFixed(1)} ({product.numReviews} review
+                    {product.numReviews !== 1 ? "s" : ""})
                   </span>
                 </RatingDisplay>
               ) : (

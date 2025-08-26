@@ -281,24 +281,13 @@ export class ProductService {
     return result;
   }
 
-  async getProductReviews(
-    productId: string,
-    page: number = 1,
-    limit: number = 10
-  ) {
+  async getProductReviews(productId: string) {
     const product = await this.findById(productId);
 
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    const reviews = product.reviews.slice(startIndex, endIndex);
+    const reviews = product.reviews;
 
     return {
       reviews,
-      pagination: {
-        total: product.numReviews,
-        page,
-        pages: Math.ceil(product.numReviews / limit),
-      },
     };
   }
 }

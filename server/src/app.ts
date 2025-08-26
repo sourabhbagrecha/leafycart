@@ -29,9 +29,10 @@ const startServer = async () => {
     const { errorHandler } = await import("./middlewares/error.middleware.js");
 
     // Route
-    app.use("/api/users", routes.userRoutes);
+    app.use("/api/user", routes.userRoutes);
     app.use("/health", routes.healthRoutes);
-    app.use("/api/products", routes.productRoutes);
+    app.use("/api/product", routes.productRoutes);
+    app.use("/api/review", routes.reviewRoutes);
     app.use("/api/order", routes.orderRoutes);
     app.use("/api/cart", routes.cartRoutes);
     // Error handling

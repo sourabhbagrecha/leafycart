@@ -70,7 +70,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserData = async (authToken: string) => {
     try {
-      const { data } = await axiosInstance.get("/api/users/me", {
+      const { data } = await axiosInstance.get("/api/user/me", {
         headers: {
           Authorization: `Bearer ${authToken}`,
         },
@@ -84,7 +84,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const createAnonymousUser = async () => {
     try {
-      const { data, status } = await axiosInstance.get("/api/users/register");
+      const { data, status } = await axiosInstance.get("/api/user/register");
 
       if (status !== 200) throw new Error("Failed to create anonymous user");
 

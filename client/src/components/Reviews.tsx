@@ -230,7 +230,7 @@ export function Reviews({ productId, reviews, currentUserId }: ReviewsProps) {
   const addReviewMutation = useMutation({
     mutationFn: async (reviewData: { rating: number; comment: string }) => {
       const { data } = await axiosClient.post(
-        `/api/products/${productId}/reviews`,
+        `/api/review/${productId}`,
         reviewData
       );
       return data;
@@ -253,7 +253,7 @@ export function Reviews({ productId, reviews, currentUserId }: ReviewsProps) {
       comment?: string;
     }) => {
       const { data } = await axiosClient.patch(
-        `/api/products/${productId}/reviews/${reviewId}`,
+        `/api/review/${productId}/${reviewId}`,
         reviewData
       );
       return data;
@@ -269,7 +269,7 @@ export function Reviews({ productId, reviews, currentUserId }: ReviewsProps) {
   const deleteReviewMutation = useMutation({
     mutationFn: async (reviewId: string) => {
       const { data } = await axiosClient.delete(
-        `/api/products/${productId}/reviews/${reviewId}`
+        `/api/review/${productId}/${reviewId}`
       );
       return data;
     },

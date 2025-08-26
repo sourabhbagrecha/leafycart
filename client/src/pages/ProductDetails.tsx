@@ -95,7 +95,7 @@ export default function ProductDetails() {
   } = useQuery<Product, Error>({
     queryKey: ["product", id],
     queryFn: async () => {
-      const { data } = await axiosClient.get(`/api/products/${id}`);
+      const { data } = await axiosClient.get(`/api/product/${id}`);
       return data;
     },
   });
