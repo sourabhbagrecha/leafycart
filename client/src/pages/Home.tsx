@@ -60,7 +60,7 @@ const ProductCard = styled(motion.div)`
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
-  min-height: 450px; /* Set minimum height */
+  min-height: 470px; /* Increased minimum height for rating */
 
   img {
     width: 100%;
@@ -94,6 +94,28 @@ const ProductCard = styled(motion.div)`
     font-weight: bold;
     color: #2c5282;
     margin: 1rem 0 0;
+  }
+`;
+
+const RatingDisplay = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+
+  .stars {
+    color: #f6ad55;
+    font-size: 1rem;
+  }
+
+  .rating-text {
+    color: #4a5568;
+  }
+
+  .no-reviews {
+    color: #718096;
+    font-style: italic;
   }
 `;
 
@@ -156,6 +178,20 @@ const Home = () => {
     mutation.mutate(product);
   };
 
+  const renderStars = (rating: number) => {
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 !== 0;
+    const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+    
+    return (
+      <>
+        {"★".repeat(fullStars)}
+        {hasHalfStar ? "☆" : ""}
+        {"☆".repeat(emptyStars)}
+      </>
+    );
+  };
+
   const ProductsDisplay = (
     <FeaturedGrid>
       {data?.products?.map((product) => (
@@ -164,6 +200,18 @@ const Home = () => {
             <img src={product?.images[0]} alt={product.name} />
             <div className="content">
               <h3>{product.name}</h3>
+              {product.numReviews > 0 ? (
+                <RatingDisplay>
+                  <span className="stars">{renderStars(product.avgRating)}</span>
+                  <span className="rating-text">
+                    {product.avgRating.toFixed(1)} ({product.numReviews} review{product.numReviews !== 1 ? 's' : ''})
+                  </span>
+                </RatingDisplay>
+              ) : (
+                <RatingDisplay>
+                  <span className="no-reviews">No reviews yet</span>
+                </RatingDisplay>
+              )}
               <p>{product.description}</p>
               <p className="price">${product.price.toFixed(2)}</p>
             </div>

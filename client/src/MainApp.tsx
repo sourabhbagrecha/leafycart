@@ -2,7 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import styled from "styled-components";
 import { lazy } from "react";
 const Home = lazy(() => import("./pages/Home"));
-const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+const ProductDetails = lazy(() => import("./pages/ProductDetails"));
 const Cart = lazy(() => import("./pages/Cart"));
 const Help = lazy(() => import("./pages/Help"));
 const Checkout = lazy(() => import("./pages/Checkout"));
@@ -10,6 +10,7 @@ const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess"));
 const Orders = lazy(() => import("./pages/Orders"));
 import Header from "./components/Header";
 import { useAuth } from "./hooks/useAuth";
+import LeafyPilot from "./pages/LeafyPilot";
 
 const AppWrapper = styled.div`
   min-height: 100vh;
@@ -34,12 +35,13 @@ export default function MainApp() {
       <MainContent>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/product/:id" element={<ProductDetail />} />
+          <Route path="/product/:id" element={<ProductDetails />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/checkout/success" element={<CheckoutSuccess />} />
           <Route path="/help" element={<Help />} />
           <Route path="/orders" element={<Orders />} />
+          <Route path="/ai" element={<LeafyPilot />} />
         </Routes>
       </MainContent>
     </AppWrapper>

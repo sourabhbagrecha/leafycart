@@ -1,5 +1,4 @@
 export interface Product {
-  id: string;
   _id: string;
   name: string;
   description: string;
@@ -10,6 +9,8 @@ export interface Product {
   stock: number;
   rating: number;
   reviews: Review[];
+  avgRating: number;
+  numReviews: number;
 }
 
 export interface User {
@@ -20,12 +21,13 @@ export interface User {
 }
 
 export interface Review {
-  id: string;
+  _id?: string;
   userId: string;
-  productId: string;
+  userName: string;
   rating: number;
   comment: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface CartProductInfo {

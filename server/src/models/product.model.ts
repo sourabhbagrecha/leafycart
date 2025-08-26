@@ -1,16 +1,26 @@
 import { ObjectId } from "mongodb";
 
-export interface Product {
+export interface Review {
   _id?: ObjectId;
-  id: string;
+  userId: ObjectId;
+  userName: string;
+  rating: number;
+  comment: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Product {
+  _id: ObjectId;
   name: string;
-  isAdmin?: boolean;
   description: string;
   price: number;
   images: string[];
   category: string;
-  featured: boolean;
   stock: number;
-  rating: number;
-  reviews: number;
+  reviews: Review[];
+  avgRating: number;
+  numReviews: number;
+  createdAt: Date;
+  updatedAt: Date;
 }

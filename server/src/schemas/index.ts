@@ -55,10 +55,17 @@ export const productSchema = {
     }),
   }),
 
-  addRating: z.object({
+  addReview: z.object({
     body: z.object({
       rating: z.number().min(1).max(5),
-      review: z.string().min(10),
+      comment: z.string().min(10),
+    }),
+  }),
+
+  updateReview: z.object({
+    body: z.object({
+      rating: z.number().min(1).max(5).optional(),
+      comment: z.string().min(10).optional(),
     }),
   }),
 };

@@ -15,7 +15,7 @@ declare global {
   }
 }
 
-export const auth = (req: Request, res: Response, next: NextFunction) => {
+export const auth = (req: Request, _res: Response, next: NextFunction) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) {

@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 import jsonwebtoken from "jsonwebtoken";
 import UserController from "../controllers/user.controller.js";
+import { auth } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 const userController = new UserController();
@@ -55,6 +56,11 @@ router.get("/login/:username", async (req, res) => {
   const response = { accessToken };
 
   res.json(response).status(200);
+});
+
+router.get("/me", auth, async (req: Request, res, next) => {
+  const user = await userController.getUserById(req.userId ?? "");
+  return res.status(200).json({ user });
 });
 
 export const userRoutes = router;

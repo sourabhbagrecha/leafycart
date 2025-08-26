@@ -3,9 +3,15 @@ import { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import { axiosInstance } from "./useAxios";
 
+interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
 interface AuthContextType {
   token: string | null;
-  user: unknown;
+  user: User | null;
   loading: boolean;
   logout: () => void;
   refreshToken: () => Promise<string | void>;
@@ -41,7 +47,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (storedToken && storedToken !== "undefined") {
         setToken(storedToken);
-        // Optionally fetch user data
+        // Fetch user data
+        await fetchUserData(storedToken);
       } else {
         // No token, create new anonymous user
         await createAnonymousUser();
@@ -61,6 +68,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const fetchUserData = async (authToken: string) => {
+    try {
+      const { data } = await axiosInstance.get("/api/users/me", {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+      setUser(data.user);
+    } catch (error) {
+      console.error("Failed to fetch user data:", error);
+      // If fetching user data fails, continue without user info
+    }
+  };
+
   const createAnonymousUser = async () => {
     try {
       const { data, status } = await axiosInstance.get("/api/users/register");
@@ -72,6 +93,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Store token
       localStorage.setItem("authToken", newToken);
       setToken(newToken);
+
+      // Fetch user data for the new user
+      await fetchUserData(newToken);
     } catch (error) {
       console.error("Failed to create anonymous user:", error);
       throw error;

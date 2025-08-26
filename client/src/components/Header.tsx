@@ -6,6 +6,9 @@ const HeaderContainer = styled.header`
   background-color: white;
   padding: 1rem 2rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 `;
 
 const Nav = styled.nav`
@@ -46,6 +49,7 @@ const Header = () => {
         <Logo to="/">LeafyCart</Logo>
         <NavLinks>
           <NavLink to="/orders">Orders</NavLink>
+          <NavLink to="/ai">LeafyPilot</NavLink>
           <NavLink to="/cart">
             <HeaderCart />
           </NavLink>

@@ -16,6 +16,6 @@
     "esm": true,
     "experimentalSpecifierResolution": "node"
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "../.agents"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]
 }

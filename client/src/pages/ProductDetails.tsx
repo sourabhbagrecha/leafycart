@@ -3,8 +3,10 @@ import { useParams } from "react-router-dom";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { PageWrapper } from "../components/PageWrapper";
+import { Reviews } from "../components/Reviews";
 import type { Product } from "../types";
 import { useAxios } from "../hooks/useAxios";
+import { useAuth } from "../hooks/useAuth";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const ProductContainer = styled.div`
@@ -42,7 +44,6 @@ const ProductInfo = styled.div`
   .description {
     color: #4a5568;
     line-height: 1.6;
-    margin-bottom: 2rem;
   }
 `;
 
@@ -50,15 +51,7 @@ const AddToCartContainer = styled.div`
   display: flex;
   gap: 1rem;
   align-items: center;
-  margin-top: 2rem;
-`;
-
-const QuantityInput = styled.input`
-  width: 60px;
-  padding: 0.5rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 4px;
-  text-align: center;
+  margin-top: 1rem;
 `;
 
 const AddToCartButton = styled(motion.button)`
@@ -89,11 +82,11 @@ const ProductStats = styled.div`
   }
 `;
 
-export default function ProductDetail() {
+export default function ProductDetails() {
   const { id } = useParams<{ id: string }>();
-  const [quantity, setQuantity] = useState(1);
   const axiosClient = useAxios();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const {
     data: product,
@@ -156,23 +149,16 @@ export default function ProductDetail() {
         <ProductInfo>
           <h2>{product.name}</h2>
           <ProductStats>
-            <div>Rating: {product.rating}⭐</div>
+            <div>
+              Rating:{" "}
+              {product.avgRating ? product.avgRating.toFixed(1) : "No ratings"}
+              ⭐ ({product.numReviews} reviews)
+            </div>
             <div>Stock: {product.stock}</div>
           </ProductStats>
           <p className="description">{product.description}</p>
-          <p className="price">${product.price.toFixed(2)}</p>
           <AddToCartContainer>
-            <QuantityInput
-              type="number"
-              min="1"
-              max={product.stock}
-              value={quantity}
-              onChange={(e) =>
-                setQuantity(
-                  Math.min(product.stock, Math.max(1, parseInt(e.target.value)))
-                )
-              }
-            />
+            <p className="price">${product.price.toFixed(2)}</p>
             <AddToCartButton
               whileTap={{ scale: 0.95 }}
               disabled={product.stock === 0}
@@ -181,6 +167,12 @@ export default function ProductDetail() {
               {product.stock === 0 ? "Out of Stock" : "Add to Cart"}
             </AddToCartButton>
           </AddToCartContainer>
+
+          <Reviews
+            productId={product._id}
+            currentUserId={user?.id}
+            reviews={product.reviews}
+          />
         </ProductInfo>
       </ProductContainer>
     </PageWrapper>
