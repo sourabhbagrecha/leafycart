@@ -209,7 +209,7 @@ export async function callAgent(
       2. Present the order details clearly and ask for confirmation
       3. If user responds with confirmation words like "yes", "confirm", "cancel it", "proceed", etc., 
          then call cancel_order with confirmCancel=true and the orderId
-      4. If user says "no", "nevermind", "wait", etc., don't cancel
+      4. If user says "no", "never-mind", "wait", etc., don't cancel
       
       IMPORTANT: Always extract the orderId from the get_latest_order response and use it in cancel_order.
       
