@@ -1,7 +1,9 @@
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../hooks/useAuth";
+import { useAxios } from "../hooks/useAxios";
 import { ChatMessage } from "./ChatMessage";
 
 const ChatMessagesContainer = styled.div`
@@ -169,100 +171,132 @@ interface CustomChatProps {
 }
 
 export function CustomChat({ selectedThreadId, onConversationsUpdate }: CustomChatProps) {
-  const { token, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
+  const axiosClient = useAxios();
+  const queryClient = useQueryClient();
+  
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [threadId, setThreadId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isConnected, setIsConnected] = useState(true);
-  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
-  const [loadingConversations, setLoadingConversations] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  // Query to load all conversations
+  const {
+    data: conversations = [],
+    isLoading: conversationsLoading,
+    error: conversationsError,
+  } = useQuery({
+    queryKey: ['conversations'],
+    queryFn: async () => {
+      const response = await axiosClient.get('/api/conversations');
+      return response.data as ConversationSummary[];
+    },
+    enabled: isAuthenticated,
+    staleTime: 30000, // 30 seconds
+  });
+
+  // Mutation to load a specific conversation
+  const loadConversationMutation = useMutation({
+    mutationFn: async (threadId: string) => {
+      const response = await axiosClient.get(`/api/conversations/${threadId}`);
+      return response.data;
+    },
+    onSuccess: (conversation) => {
+      setThreadId(conversation.threadId);
+      
+      const uiMessages: Message[] = conversation.messages.map((msg: {
+        id: string;
+        content: string;
+        role: string;
+        timestamp: string;
+      }) => ({
+        id: msg.id,
+        text: msg.content,
+        isUser: msg.role === 'user',
+        timestamp: new Date(msg.timestamp)
+      }));
+      
+      setMessages(uiMessages);
+    },
+    onError: (error) => {
+      console.error('Error loading conversation:', error);
+    }
+  });
+
+  // Mutation to send a message
+  const sendMessageMutation = useMutation({
+    mutationFn: async ({ message, currentThreadId }: { message: string; currentThreadId: string | null }) => {
+      if (!currentThreadId) {
+        // Start new conversation
+        const response = await axiosClient.post('/api/agent', { message });
+        return { ...response.data, isNewThread: true };
+      } else {
+        // Continue existing conversation
+        const response = await axiosClient.post(`/api/agent/${currentThreadId}`, { message });
+        return { ...response.data, isNewThread: false };
+      }
+    },
+    onSuccess: (data, variables) => {
+      // Set thread ID if this is a new conversation
+      if (data.isNewThread && data.threadId) {
+        setThreadId(data.threadId);
+      }
+
+      // Add AI response to messages
+      const aiMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: data.response || 'No response received',
+        isUser: false,
+        timestamp: new Date()
+      };
+
+      setMessages(prev => [...prev, aiMessage]);
+
+      // Invalidate conversations query to refresh the list
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    },
+    onError: (error) => {
+      console.error('Error sending message:', error);
+      
+      // Add error message to chat
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: 'Sorry, I encountered an error connecting to the server. Please try again.',
+        isUser: false,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    }
+  });
+
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
+  // Update conversations when they change
   useEffect(() => {
-    if (isAuthenticated && token) {
-      loadConversations();
+    if (conversations) {
+      onConversationsUpdate(conversations);
     }
-  }, [isAuthenticated, token]);
+  }, [conversations, onConversationsUpdate]);
 
+  // Handle selected thread changes
   useEffect(() => {
     if (selectedThreadId) {
-      loadConversation(selectedThreadId);
+      loadConversationMutation.mutate(selectedThreadId);
     } else {
-      startNewConversation();
+      // Start new conversation
+      setThreadId(null);
+      setMessages([]);
     }
   }, [selectedThreadId]);
 
-  const loadConversations = async () => {
-    if (!token) return;
-    
-    setLoadingConversations(true);
-    try {
-      const response = await fetch('http://localhost:3000/api/conversations', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setConversations(data);
-        onConversationsUpdate(data);
-      }
-    } catch (error) {
-      console.error('Error loading conversations:', error);
-    } finally {
-      setLoadingConversations(false);
-    }
-  };
-
-  const loadConversation = async (selectedThreadId: string) => {
-    if (!token) return;
-    
-    try {
-      const response = await fetch(`http://localhost:3000/api/conversations/${selectedThreadId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const conversation = await response.json();
-        setThreadId(selectedThreadId);
-        
-        const uiMessages: Message[] = conversation.messages.map((msg: any) => ({
-          id: msg.id,
-          text: msg.content,
-          isUser: msg.role === 'user',
-          timestamp: new Date(msg.timestamp)
-        }));
-        
-        setMessages(uiMessages);
-        setError(null);
-      }
-    } catch (error) {
-      console.error('Error loading conversation:', error);
-      setError('Failed to load conversation');
-    }
-  };
-
-  const startNewConversation = () => {
-    setThreadId(null);
-    setMessages([]);
-    setError(null);
-  };
-
   const handleSendMessage = async () => {
-    if (!inputValue.trim() || isLoading || !isAuthenticated || !token) return;
+    if (!inputValue.trim() || sendMessageMutation.isPending || !isAuthenticated) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -274,87 +308,35 @@ export function CustomChat({ selectedThreadId, onConversationsUpdate }: CustomCh
     setMessages(prev => [...prev, userMessage]);
     const currentInput = inputValue;
     setInputValue('');
-    setIsLoading(true);
-    setError(null);
 
-    try {
-      let response;
-      if (!threadId) {
-        response = await fetch('http://localhost:3000/api/agent', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify({ message: currentInput }),
-        });
-      } else {
-        response = await fetch(`http://localhost:3000/api/agent/${threadId}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify({ message: currentInput }),
-        });
-      }
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      setError(null);
-      setIsConnected(true);
-      
-      if (data.threadId && !threadId) {
-        setThreadId(data.threadId);
-      }
-
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: data.response || 'No response received',
-        isUser: false,
-        timestamp: new Date()
-      };
-
-      setMessages(prev => [...prev, aiMessage]);
-      
-      await loadConversations();
-    } catch (error) {
-      console.error('Error sending message:', error);
-      setIsConnected(false);
-      setError('Failed to connect to the AI assistant. Please check if the server is running.');
-      
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: 'Sorry, I encountered an error connecting to the server. Please try again.',
-        isUser: false,
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
-      setIsLoading(false);
-    }
+    // Send message using mutation
+    sendMessageMutation.mutate({
+      message: currentInput,
+      currentThreadId: threadId
+    });
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
   };
 
+  // Determine loading and error states
+  const isLoading = sendMessageMutation.isPending || loadConversationMutation.isPending;
+  const hasError = sendMessageMutation.error || loadConversationMutation.error || conversationsError;
+  const isConnected = !hasError;
+
   return (
     <>
-      {error && (
+      {hasError && (
         <ErrorBanner
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          ⚠️ {error}
+          ⚠️ {hasError instanceof Error ? hasError.message : 'An error occurred'}
         </ErrorBanner>
       )}
       
@@ -377,7 +359,7 @@ export function CustomChat({ selectedThreadId, onConversationsUpdate }: CustomCh
             />
           ))
         )}
-        {isLoading && (
+        {sendMessageMutation.isPending && (
           <ChatMessage
             text=""
             isUser={false}
@@ -400,17 +382,17 @@ export function CustomChat({ selectedThreadId, onConversationsUpdate }: CustomCh
           <ChatInput
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyDown}
             placeholder={isAuthenticated ? "Ask me anything about products, shopping, or recommendations..." : "Please log in to use the AI assistant"}
-            disabled={isLoading || !isConnected || !isAuthenticated}
+            disabled={isLoading || !isAuthenticated}
           />
           <ChatButton
             onClick={handleSendMessage}
-            disabled={!inputValue.trim() || isLoading || !isConnected || !isAuthenticated}
+            disabled={!inputValue.trim() || isLoading || !isAuthenticated}
             whileHover={{ scale: (isConnected && isAuthenticated) ? 1.02 : 1 }}
             whileTap={{ scale: (isConnected && isAuthenticated) ? 0.98 : 1 }}
           >
-            {isLoading ? 'Sending...' : 'Send'}
+            {sendMessageMutation.isPending ? 'Sending...' : 'Send'}
           </ChatButton>
         </InputRow>
       </ChatInputContainer>

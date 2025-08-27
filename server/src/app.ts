@@ -46,29 +46,39 @@ const startServer = async () => {
       const initialMessage = req.body?.message ?? "";
       const threadId = Date.now().toString(); // Simple thread ID generation
       const conversationService = new ConversationService();
-      
+
       try {
         // Call the agent
-        const response = await callAgent(client, initialMessage, threadId, req.userId);
-        
+        const response = await callAgent(
+          client,
+          initialMessage,
+          threadId,
+          req.userId
+        );
+
         // Create conversation record
-        await conversationService.createConversation(req.userId!, threadId, initialMessage);
-        
+        await conversationService.createConversation(
+          req.userId!,
+          threadId,
+          initialMessage
+        );
+
         // Add both user and assistant messages
         await conversationService.addMessage(threadId, req.userId!, {
           id: Date.now().toString(),
           content: initialMessage,
           role: "user",
-          timestamp: new Date()
+          timestamp: new Date(),
         });
-        
+
         await conversationService.addMessage(threadId, req.userId!, {
           id: (Date.now() + 1).toString(),
-          content: typeof response === 'string' ? response : JSON.stringify(response),
-          role: "assistant", 
-          timestamp: new Date()
+          content:
+            typeof response === "string" ? response : JSON.stringify(response),
+          role: "assistant",
+          timestamp: new Date(),
         });
-        
+
         res.json({ threadId, response });
       } catch (error) {
         console.error("Error starting conversation:", error);
@@ -76,8 +86,6 @@ const startServer = async () => {
       }
     });
 
-    // API endpoint to send a message in an existing conversation
-    // curl -X POST -H "Content-Type: application/json" -d '{"message": "What team members did you recommend?"}' http://localhost:3000/chat/123456789
     app.post(
       "/api/agent/:threadId",
       auth,
@@ -85,26 +93,34 @@ const startServer = async () => {
         const { threadId } = req.params;
         const { message } = req.body;
         const conversationService = new ConversationService();
-        
+
         try {
           // Call the agent
-          const response = await callAgent(client, message, threadId, req.userId);
-          
+          const response = await callAgent(
+            client,
+            message,
+            threadId,
+            req.userId
+          );
+
           // Add both user and assistant messages to conversation history
           await conversationService.addMessage(threadId, req.userId!, {
             id: Date.now().toString(),
             content: message,
             role: "user",
-            timestamp: new Date()
+            timestamp: new Date(),
           });
-          
+
           await conversationService.addMessage(threadId, req.userId!, {
             id: (Date.now() + 1).toString(),
-            content: typeof response === 'string' ? response : JSON.stringify(response),
+            content:
+              typeof response === "string"
+                ? response
+                : JSON.stringify(response),
             role: "assistant",
-            timestamp: new Date()
+            timestamp: new Date(),
           });
-          
+
           res.json({ response });
         } catch (error) {
           console.error("Error in chat:", error);
