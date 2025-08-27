@@ -2,7 +2,7 @@ import styled from "styled-components";
 import { motion } from "framer-motion";
 import { QuickActions } from "./QuickActions";
 
-const Sidebar = styled(motion.aside)`
+const Sidebar = styled(motion.aside)<{ isOpen?: boolean }>`
   width: 320px;
   background: white;
   border-radius: 12px;
@@ -13,6 +13,18 @@ const Sidebar = styled(motion.aside)`
   flex-shrink: 0;
   overflow: hidden;
   max-height: 100%;
+
+  @media (max-width: 768px) {
+    position: fixed;
+    top: 0;
+    left: ${props => props.isOpen ? '0' : '-100%'};
+    height: 100vh;
+    width: 80%;
+    max-width: 320px;
+    z-index: 1000;
+    border-radius: 0;
+    transition: left 0.3s ease-in-out;
+  }
 `;
 
 const SidebarContent = styled.div`
@@ -22,6 +34,12 @@ const SidebarContent = styled.div`
   gap: 2rem;
   overflow-y: auto;
   flex: 1;
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+    gap: 1.5rem;
+    padding-top: 4rem;
+  }
 
   &::-webkit-scrollbar {
     width: 6px;
@@ -157,6 +175,22 @@ interface Feature {
   text: string;
 }
 
+const CloseButton = styled(motion.button)`
+  display: none;
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: transparent;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  z-index: 1001;
+  
+  @media (max-width: 768px) {
+    display: block;
+  }
+`;
+
 interface ConversationSidebarProps {
   conversations: ConversationSummary[];
   currentThreadId: string | null;
@@ -165,6 +199,8 @@ interface ConversationSidebarProps {
   onNewChat: () => void;
   onConversationSelect: (threadId: string) => void;
   onQuickAction?: (action: string) => void;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 export function ConversationSidebar({
@@ -174,14 +210,26 @@ export function ConversationSidebar({
   features,
   onNewChat,
   onConversationSelect,
-  onQuickAction
+  onQuickAction,
+  isOpen = true,
+  onClose
 }: ConversationSidebarProps) {
   return (
     <Sidebar
+      isOpen={isOpen}
       initial={{ x: -320, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
     >
+      <CloseButton
+        onClick={onClose}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+        </svg>
+      </CloseButton>
       <SidebarContent>
         <SidebarSection>
           <SidebarTitle>Quick Actions</SidebarTitle>

@@ -11,23 +11,22 @@ import { OrdersList } from "./OrdersList";
 const ChatMessagesContainer = styled.div`
   flex: 1;
   overflow-y: auto;
-  padding: 1.5rem;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem;
 
   &::-webkit-scrollbar {
-    width: 6px;
+    width: 4px;
   }
 
   &::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 3px;
+    background: transparent;
   }
 
   &::-webkit-scrollbar-thumb {
     background: #cbd5e0;
-    border-radius: 3px;
+    border-radius: 2px;
   }
 
   &::-webkit-scrollbar-thumb:hover {
@@ -37,40 +36,45 @@ const ChatMessagesContainer = styled.div`
 
 const ChatInputContainer = styled.div`
   flex-shrink: 0;
-  padding: 1.5rem;
+  padding: 1rem;
   border-top: 1px solid #e2e8f0;
   background: #f9fafb;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
 `;
 
 const InputRow = styled.div`
   display: flex;
-  gap: 1rem;
+  gap: 0.75rem;
   align-items: flex-end;
 `;
 
 const ChatInput = styled.textarea`
   flex: 1;
   background: white;
-  border: 2px solid #e2e8f0;
-  border-radius: 12px;
-  color: #2d3748;
-  padding: 1rem 1.5rem;
-  font-size: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  color: #374151;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
   resize: none;
-  min-height: 44px;
-  max-height: 120px;
+  min-height: 40px;
+  max-height: 100px;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  line-height: 1.4;
+
+  @media (max-width: 768px) {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
 
   &::placeholder {
-    color: #a0aec0;
+    color: #9ca3af;
   }
 
   &:focus {
     border-color: #2c5282;
-    box-shadow: 0 0 0 3px rgba(44, 82, 130, 0.1);
+    box-shadow: 0 0 0 2px rgba(44, 82, 130, 0.1);
     outline: none;
   }
 `;
@@ -78,14 +82,16 @@ const ChatInput = styled.textarea`
 const ChatButton = styled(motion.button)`
   background: linear-gradient(135deg, #2c5282, #3182ce);
   border: none;
-  border-radius: 8px;
+  border-radius: 20px;
   color: white;
-  font-weight: 600;
-  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.9rem;
   transition: all 0.2s ease;
   flex-shrink: 0;
   height: fit-content;
   cursor: pointer;
+  min-width: 70px;
 
   &:disabled {
     opacity: 0.6;
@@ -95,12 +101,12 @@ const ChatButton = styled(motion.button)`
 
 const WelcomeMessage = styled.div`
   text-align: center;
-  padding: 3rem 2rem;
+  padding: 2rem 1.5rem;
   color: #718096;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
 `;
 
 const WelcomeIcon = styled.div`
@@ -136,21 +142,95 @@ const ErrorBanner = styled(motion.div)`
   gap: 0.5rem;
 `;
 
-const ConnectionStatus = styled.div<{ connected: boolean }>`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.8rem;
-  color: ${props => props.connected ? '#38a169' : '#e53e3e'};
-  margin-bottom: 0.5rem;
+const ConnectionIndicator = styled.div<{ connected: boolean }>`
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: ${props => props.connected ? '#10b981' : '#ef4444'};
+  position: relative;
+  cursor: pointer;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: inherit;
+    animation: ${props => props.connected ? 'pulse-green' : 'pulse-red'} 2s infinite;
+    opacity: 0.6;
+  }
+  
+  @keyframes pulse-green {
+    0% {
+      transform: scale(1);
+      opacity: 0.6;
+    }
+    50% {
+      transform: scale(1.4);
+      opacity: 0.2;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 0.6;
+    }
+  }
+  
+  @keyframes pulse-red {
+    0% {
+      transform: scale(1);
+      opacity: 0.6;
+    }
+    50% {
+      transform: scale(1.4);
+      opacity: 0.2;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 0.6;
+    }
+  }
 `;
 
-const StatusDot = styled.div<{ connected: boolean }>`
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: ${props => props.connected ? '#38a169' : '#e53e3e'};
+const ConnectionTooltip = styled.div<{ connected: boolean }>`
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #374151;
+  color: white;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  margin-top: 0.5rem;
+  z-index: 1000;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-bottom-color: #374151;
+  }
 `;
+
+const ConnectionContainer = styled.div`
+  position: relative;
+  display: flex;
+  align-items: center;
+  
+  &:hover ${ConnectionTooltip} {
+    opacity: 1;
+  }
+`;
+
+export { ConnectionContainer, ConnectionIndicator, ConnectionTooltip };
 
 interface Message {
   id: string;
@@ -175,9 +255,10 @@ interface ConversationSummary {
 interface CustomChatProps {
   selectedThreadId: string | null;
   onConversationsUpdate: (conversations: ConversationSummary[]) => void;
+  onConnectionStatusChange?: (isConnected: boolean, isAuthenticated: boolean) => void;
 }
 
-export function CustomChat({ selectedThreadId, onConversationsUpdate }: CustomChatProps) {
+export function CustomChat({ selectedThreadId, onConversationsUpdate, onConnectionStatusChange }: CustomChatProps) {
   const { isAuthenticated } = useAuth();
   const axiosClient = useAxios();
   const queryClient = useQueryClient();
@@ -214,17 +295,98 @@ export function CustomChat({ selectedThreadId, onConversationsUpdate }: CustomCh
     onSuccess: (conversation) => {
       setThreadId(conversation.threadId);
       
-      const uiMessages: Message[] = conversation.messages.map((msg: {
-        id: string;
-        content: string;
-        role: string;
-        timestamp: string;
-      }) => ({
-        id: msg.id,
-        text: msg.content,
-        isUser: msg.role === 'user',
-        timestamp: new Date(msg.timestamp)
-      }));
+      const uiMessages: Message[] = conversation.messages.map((msg: any) => {
+        
+        // Try to reconstruct structured data from text content
+        let structuredData = msg.structuredData || msg.structured_data || msg.metadata;
+        
+        if (!structuredData && !msg.isUser && msg.content) {
+          // Check if this looks like an orders list response
+          if (msg.content.includes('Here are your last') && msg.content.includes('orders:') && msg.content.includes('Order ID:')) {
+            // Parse order data from text - more comprehensive regex to capture items
+            const orderMatches = [...msg.content.matchAll(/(\d+)\) Order ID: ([a-f0-9]+)[\s\S]*?Date: ([\d-T:.Z]+)[\s\S]*?Status: (\w+)[\s\S]*?Total: \$?([\d.]+)[\s\S]*?Items:([\s\S]*?)(?=(?:\d+\) Order ID:)|$)/g)];
+            
+            if (orderMatches && orderMatches.length > 0) {
+              const orders = orderMatches.map((match) => {
+                const [, orderNum, orderId, date, status, total, itemsText] = match;
+                
+                // Parse items from the items section
+                const items: any[] = [];
+                if (itemsText) {
+                  const itemMatches = [...itemsText.matchAll(/- (.+?) — qty (\d+) — \$?([\d.]+)(?: each)?/g)];
+                  itemMatches.forEach((itemMatch) => {
+                    const [, name, quantity, price] = itemMatch;
+                    items.push({
+                      name: name.trim(),
+                      quantity: parseInt(quantity),
+                      price: parseFloat(price)
+                    });
+                  });
+                }
+                
+                return {
+                  orderId,
+                  date,
+                  status,
+                  total: parseFloat(total),
+                  items
+                };
+              }).filter(Boolean);
+              
+              if (orders.length > 0) {
+                structuredData = {
+                  type: 'orders_list' as const,
+                  data: { orders },
+                  message: 'Here are your orders:'
+                };
+              }
+            }
+          }
+          // Check if this looks like a single order response
+          else if (msg.content.includes('Order ID:') && msg.content.includes('Status:') && msg.content.includes('Total:') && !msg.content.includes('Here are your last')) {
+            const orderMatch = msg.content.match(/Order ID: ([a-f0-9]+)[\s\S]*?Date: ([\d-T:.Z]+)[\s\S]*?Status: (\w+)[\s\S]*?Total: \$?([\d.]+)[\s\S]*?Items:([\s\S]*?)(?=Would you like|$)/);
+            
+            if (orderMatch) {
+              const [, orderId, date, status, total, itemsText] = orderMatch;
+              
+              // Parse items
+              const items: any[] = [];
+              if (itemsText) {
+                const itemMatches = [...itemsText.matchAll(/- (.+?) — qty (\d+) — \$?([\d.]+)(?: each)?/g)];
+                itemMatches.forEach((itemMatch) => {
+                  const [, name, quantity, price] = itemMatch;
+                  items.push({
+                    name: name.trim(),
+                    quantity: parseInt(quantity),
+                    price: parseFloat(price)
+                  });
+                });
+              }
+              
+              structuredData = {
+                type: 'order_display' as const,
+                data: {
+                  orderId,
+                  date,
+                  status,
+                  total: parseFloat(total),
+                  items
+                },
+                message: msg.content.split('Order ID:')[0].trim()
+              };
+            }
+          }
+        }
+        
+        const mappedMsg = {
+          id: msg.id,
+          text: msg.content,
+          isUser: msg.role === 'user',
+          timestamp: new Date(msg.timestamp),
+          structuredData
+        };
+        return mappedMsg;
+      });
       
       setMessages(uiMessages);
     },
@@ -351,6 +513,11 @@ export function CustomChat({ selectedThreadId, onConversationsUpdate }: CustomCh
   const isLoading = sendMessageMutation.isPending || loadConversationMutation.isPending;
   const hasError = sendMessageMutation.error || loadConversationMutation.error || conversationsError;
   const isConnected = !hasError;
+
+  // Notify parent about connection status changes
+  useEffect(() => {
+    onConnectionStatusChange?.(isConnected, isAuthenticated);
+  }, [isConnected, isAuthenticated, onConnectionStatusChange]);
 
   return (
     <>
@@ -527,14 +694,6 @@ export function CustomChat({ selectedThreadId, onConversationsUpdate }: CustomCh
       </ChatMessagesContainer>
       
       <ChatInputContainer>
-        <ConnectionStatus connected={isConnected && isAuthenticated}>
-          <StatusDot connected={isConnected && isAuthenticated} />
-          {!isAuthenticated 
-            ? 'Authentication required' 
-            : isConnected 
-              ? 'Connected to AI assistant' 
-              : 'Disconnected - Server may be offline'}
-        </ConnectionStatus>
         <InputRow>
           <ChatInput
             value={inputValue}

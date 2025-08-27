@@ -4,25 +4,30 @@ import { motion } from "framer-motion";
 const OrderCardContainer = styled(motion.div)`
   background: white;
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 1.5rem;
-  margin: 0.5rem 0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  max-width: 400px;
+  border-radius: 16px;
+  padding: 1rem;
+  margin: 0.25rem 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  max-width: 380px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
 `;
 
 const OrderHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
-  padding-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
   border-bottom: 1px solid #f1f5f9;
 `;
 
 const OrderId = styled.div`
-  font-size: 0.9rem;
-  color: #64748b;
+  font-size: 0.85rem;
+  color: #6b7280;
   font-weight: 500;
 `;
 
@@ -70,28 +75,28 @@ const OrderStatus = styled.div<{ status: string }>`
 `;
 
 const OrderTotal = styled.div`
-  font-size: 1.2rem;
-  font-weight: 700;
+  font-size: 1.1rem;
+  font-weight: 600;
   color: #1e293b;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 `;
 
 const OrderItems = styled.div`
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 `;
 
 const OrderItemsTitle = styled.h4`
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 600;
   color: #374151;
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.4rem 0;
 `;
 
 const OrderItem = styled.div`
   display: flex;
   justify-content: between;
   align-items: center;
-  padding: 0.5rem 0;
+  padding: 0.4rem 0;
   border-bottom: 1px solid #f8fafc;
 
   &:last-child {
@@ -116,27 +121,28 @@ const ItemQuantityPrice = styled.div`
 `;
 
 const OrderDate = styled.div`
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: #6b7280;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 `;
 
 const ActionButtons = styled.div`
   display: flex;
-  gap: 0.75rem;
-  margin-top: 1rem;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
 `;
 
 const ActionButton = styled(motion.button)<{
   variant?: "primary" | "danger" | "secondary";
 }>`
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 600;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
   border: none;
   cursor: pointer;
   transition: all 0.2s ease;
+  flex: 1;
 
   ${(props) => {
     switch (props.variant) {

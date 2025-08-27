@@ -5,17 +5,19 @@ const MessageContainer = styled(motion.div)<{ isUser: boolean }>`
   background: ${props => 
     props.isUser 
       ? 'linear-gradient(135deg, #2c5282, #3182ce)' 
-      : 'white'};
-  color: ${props => props.isUser ? 'white' : '#2d3748'};
-  border: 1px solid ${props => props.isUser ? '#2c5282' : '#cbd5e0'};
-  border-radius: 12px;
-  padding: 1.25rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  max-width: 80%;
+      : '#f8fafc'};
+  color: ${props => props.isUser ? 'white' : '#374151'};
+  border: ${props => props.isUser ? 'none' : '1px solid #e2e8f0'};
+  border-radius: ${props => props.isUser ? '18px 18px 4px 18px' : '18px 18px 18px 4px'};
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  max-width: 70%;
   word-wrap: break-word;
   align-self: ${props => props.isUser ? 'flex-end' : 'flex-start'};
   margin-left: ${props => props.isUser ? 'auto' : '0'};
   margin-right: ${props => props.isUser ? '0' : 'auto'};
+  box-shadow: none;
 `;
 
 interface ChatMessageProps {

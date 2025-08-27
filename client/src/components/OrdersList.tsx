@@ -4,27 +4,26 @@ import { OrderCard } from "./OrderCard";
 
 const OrdersListContainer = styled.div`
   max-width: 100%;
-  margin: 0.5rem 0;
+  margin: 0.25rem 0;
 `;
 
 const OrdersScrollContainer = styled.div`
   display: flex;
-  gap: 1rem;
+  gap: 0.75rem;
   overflow-x: auto;
-  padding: 0.5rem 0 1rem 0;
+  padding: 0.25rem 0 0.75rem 0;
   
   &::-webkit-scrollbar {
-    height: 6px;
+    height: 4px;
   }
 
   &::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 3px;
+    background: transparent;
   }
 
   &::-webkit-scrollbar-thumb {
     background: #cbd5e0;
-    border-radius: 3px;
+    border-radius: 2px;
   }
 
   &::-webkit-scrollbar-thumb:hover {
@@ -33,16 +32,16 @@ const OrdersScrollContainer = styled.div`
 `;
 
 const OrdersTitle = styled.h3`
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 600;
   color: #374151;
-  margin: 0 0 0.75rem 0;
+  margin: 0 0 0.5rem 0;
 `;
 
 const OrderCardWrapper = styled.div`
   flex-shrink: 0;
-  min-width: 320px;
-  max-width: 400px;
+  min-width: 300px;
+  max-width: 380px;
 `;
 
 interface OrderData {
