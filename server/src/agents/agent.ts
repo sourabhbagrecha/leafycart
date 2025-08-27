@@ -72,12 +72,15 @@ export async function callAgent(
         };
 
         return JSON.stringify({
-          orderId: latestOrder._id,
-          status: latestOrder.status,
-          total: latestOrder.total,
-          items: orderWithProductNames.items,
-          createdAt: latestOrder.createdAt,
-          shippingDetails: latestOrder.shippingDetails,
+          type: "order_display",
+          data: {
+            orderId: latestOrder._id,
+            status: latestOrder.status,
+            total: latestOrder.total,
+            items: orderWithProductNames.items,
+            createdAt: latestOrder.createdAt,
+            shippingDetails: latestOrder.shippingDetails,
+          },
         });
       } catch (error) {
         throw error;
@@ -87,6 +90,78 @@ export async function callAgent(
       name: "get_latest_order",
       description: "Fetches the user's most recent order details",
       schema: z.object({}),
+    }
+  );
+
+  const getLastOrdersTool = tool(
+    async ({ limit = 10 }) => {
+      console.log("Getting last", limit, "orders for user:", userId);
+      if (!userId) {
+        return "Error: User authentication required to fetch orders";
+      }
+
+      try {
+        const orders = await ordersCollection
+          .find(
+            { userId: new ObjectId(userId) },
+            { sort: { createdAt: -1 }, limit: limit }
+          )
+          .toArray();
+
+        if (!orders || orders.length === 0) {
+          return "No orders found for this user";
+        }
+
+        // Get product details for all order items
+        const allProductIds = orders.flatMap((order: any) =>
+          order.items.map(
+            (item: { productId: string }) => new ObjectId(item.productId)
+          )
+        );
+        const products = await productsCollection
+          .find({ _id: { $in: allProductIds } })
+          .toArray();
+
+        const ordersWithProductNames = orders.map((order: any) => ({
+          ...order,
+          items: order.items.map((item: { productId: string }) => {
+            const product = products.find(
+              (p) => p._id.toString() === item.productId
+            );
+            return {
+              ...item,
+              productName: product?.name || "Unknown Product",
+            };
+          }),
+        }));
+
+        return JSON.stringify({
+          type: "orders_list",
+          data: {
+            orders: ordersWithProductNames.map((order: any) => ({
+              orderId: order._id,
+              status: order.status,
+              total: order.total,
+              items: order.items,
+              createdAt: order.createdAt,
+              shippingDetails: order.shippingDetails,
+            })),
+          },
+        });
+      } catch (error) {
+        throw error;
+      }
+    },
+    {
+      name: "get_last_orders",
+      description: "Fetches the user's last N orders (default 10)",
+      schema: z.object({
+        limit: z
+          .number()
+          .optional()
+          .default(10)
+          .describe("Number of orders to fetch (max 20)"),
+      }),
     }
   );
 
@@ -116,13 +191,17 @@ export async function callAgent(
         }
 
         if (!confirmCancel) {
-          return `I found your order:
-                  • Order ID: ${orderId}
-                  • Status: ${order.status}
-                  • Total: $${order.total}
-                  • Items: ${order.items.length} items
-                  
-                  To confirm cancellation, please reply with "yes" or "confirm" or "cancel it".`;
+          return JSON.stringify({
+            type: "order_confirmation",
+            data: {
+              orderId: order._id,
+              status: order.status,
+              total: order.total,
+              itemsCount: order.items.length,
+              action: "cancel",
+            },
+            message: `I found your order (ID: ${orderId}). Status: ${order.status}, Total: $${order.total}, Items: ${order.items.length}. To confirm cancellation, please reply with "yes" or "confirm" or "cancel it".`,
+          });
         }
 
         // Cancel the order
@@ -159,7 +238,7 @@ export async function callAgent(
     }
   );
 
-  const tools = [getLatestOrderTool, cancelOrderTool];
+  const tools = [getLatestOrderTool, getLastOrdersTool, cancelOrderTool];
 
   // We can extract the state typing via `GraphState.State`
   const toolNode = new ToolNode<typeof GraphState.State>(tools);
@@ -201,8 +280,13 @@ export async function callAgent(
       system_message: `You are LeafyPilot, a helpful e-commerce shopping assistant for LeafyCart. 
       You can help customers with:
       - Checking their recent orders and order status
+      - Showing order history (use get_last_orders for multiple orders)
       - Cancelling orders (with proper confirmation process)
       - General shopping assistance and product inquiries
+      
+      For order queries:
+      - Use get_latest_order for "latest", "most recent", or "last order" (singular)
+      - Use get_last_orders for "orders", "order history", "past orders", or when they want to see multiple orders
       
       For order cancellation workflow:
       1. When user asks to "cancel my latest order" or similar, use get_latest_order first
@@ -247,8 +331,61 @@ export async function callAgent(
     { recursionLimit: 15, configurable: { thread_id: thread_id } }
   );
 
-  // console.log(JSON.stringify(finalState.messages, null, 2));
-  console.log(finalState.messages[finalState.messages.length - 1].content);
+  const lastMessage = finalState.messages[finalState.messages.length - 1];
+  const responseContent =
+    typeof lastMessage.content === "string"
+      ? lastMessage.content
+      : JSON.stringify(lastMessage.content);
 
-  return finalState.messages[finalState.messages.length - 1].content;
+  console.log("Agent response:", responseContent);
+
+  // Only look for structured data from recent tool calls (from this interaction)
+  // Get messages from the last human message onwards to avoid old tool results
+  let lastHumanMessageIndex = -1;
+  for (let i = finalState.messages.length - 1; i >= 0; i--) {
+    if (finalState.messages[i].constructor.name === "HumanMessage") {
+      lastHumanMessageIndex = i;
+      break;
+    }
+  }
+
+  const recentMessages =
+    lastHumanMessageIndex >= 0
+      ? finalState.messages.slice(lastHumanMessageIndex)
+      : [];
+  const recentToolResults = recentMessages
+    .filter((msg) => msg.constructor.name === "ToolMessage")
+    .map((msg) =>
+      typeof msg.content === "string"
+        ? msg.content
+        : JSON.stringify(msg.content)
+    );
+
+  // Look for structured data in recent tool results only
+  let structuredData = null;
+  for (const result of recentToolResults) {
+    try {
+      const parsed = JSON.parse(result);
+      if (parsed.type && parsed.data) {
+        structuredData = parsed;
+        break;
+      }
+    } catch (e) {
+      // Not JSON or not structured data, continue
+    }
+  }
+
+  // Return structured response if found, otherwise return text
+  if (structuredData) {
+    return {
+      type: structuredData.type,
+      data: structuredData.data,
+      message: structuredData.message || responseContent,
+    };
+  }
+
+  return {
+    type: "text",
+    message: responseContent,
+  };
 }

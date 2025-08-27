@@ -71,15 +71,23 @@ const startServer = async () => {
           timestamp: new Date(),
         });
 
+        // Handle structured responses
+        const responseContent = typeof response === "string" 
+          ? response 
+          : response.message || JSON.stringify(response);
+
         await conversationService.addMessage(threadId, req.userId!, {
           id: (Date.now() + 1).toString(),
-          content:
-            typeof response === "string" ? response : JSON.stringify(response),
+          content: responseContent,
           role: "assistant",
           timestamp: new Date(),
         });
 
-        res.json({ threadId, response });
+        // Send structured response to client
+        res.json({ 
+          threadId, 
+          response: typeof response === "string" ? response : response
+        });
       } catch (error) {
         console.error("Error starting conversation:", error);
         res.status(500).json({ error: "Internal server error" });
@@ -111,17 +119,22 @@ const startServer = async () => {
             timestamp: new Date(),
           });
 
+          // Handle structured responses
+          const responseContent = typeof response === "string" 
+            ? response 
+            : response.message || JSON.stringify(response);
+
           await conversationService.addMessage(threadId, req.userId!, {
             id: (Date.now() + 1).toString(),
-            content:
-              typeof response === "string"
-                ? response
-                : JSON.stringify(response),
+            content: responseContent,
             role: "assistant",
             timestamp: new Date(),
           });
 
-          res.json({ response });
+          // Send structured response to client
+          res.json({ 
+            response: typeof response === "string" ? response : response
+          });
         } catch (error) {
           console.error("Error in chat:", error);
           res.status(500).json({ error: "Internal server error" });

@@ -5,6 +5,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../hooks/useAuth";
 import { useAxios } from "../hooks/useAxios";
 import { ChatMessage } from "./ChatMessage";
+import { OrderCard } from "./OrderCard";
+import { OrdersList } from "./OrdersList";
 
 const ChatMessagesContainer = styled.div`
   flex: 1;
@@ -155,6 +157,11 @@ interface Message {
   text: string;
   isUser: boolean;
   timestamp: Date;
+  structuredData?: {
+    type: 'order_display' | 'order_confirmation' | 'orders_list' | 'text';
+    data?: any;
+    message?: string;
+  };
 }
 
 interface ConversationSummary {
@@ -187,7 +194,6 @@ export function CustomChat({ selectedThreadId, onConversationsUpdate }: CustomCh
   // Query to load all conversations
   const {
     data: conversations = [],
-    isLoading: conversationsLoading,
     error: conversationsError,
   } = useQuery({
     queryKey: ['conversations'],
@@ -240,19 +246,37 @@ export function CustomChat({ selectedThreadId, onConversationsUpdate }: CustomCh
         return { ...response.data, isNewThread: false };
       }
     },
-    onSuccess: (data, variables) => {
+    onSuccess: (data) => {
       // Set thread ID if this is a new conversation
       if (data.isNewThread && data.threadId) {
         setThreadId(data.threadId);
       }
 
-      // Add AI response to messages
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: data.response || 'No response received',
-        isUser: false,
-        timestamp: new Date()
-      };
+      // Handle structured responses
+      let aiMessage: Message;
+      
+      if (data.response && typeof data.response === 'object' && data.response.type && data.response.type !== 'text') {
+        // Structured response (order card, etc.)
+        aiMessage = {
+          id: (Date.now() + 1).toString(),
+          text: data.response.message || 'Order information',
+          isUser: false,
+          timestamp: new Date(),
+          structuredData: {
+            type: data.response.type,
+            data: data.response.data,
+            message: data.response.message
+          }
+        };
+      } else {
+        // Regular text response
+        aiMessage = {
+          id: (Date.now() + 1).toString(),
+          text: typeof data.response === 'string' ? data.response : data.response?.message || 'No response received',
+          isUser: false,
+          timestamp: new Date()
+        };
+      }
 
       setMessages(prev => [...prev, aiMessage]);
 
@@ -351,13 +375,146 @@ export function CustomChat({ selectedThreadId, onConversationsUpdate }: CustomCh
             </WelcomeSubtext>
           </WelcomeMessage>
         ) : (
-          messages.map((message) => (
-            <ChatMessage
-              key={message.id}
-              text={message.text}
-              isUser={message.isUser}
-            />
-          ))
+          messages.map((message) => {
+            try {
+              if (!message.isUser && message.structuredData?.type) {
+                // Handle orders list display
+                if (message.structuredData.type === 'orders_list') {
+                  if (!message.structuredData.data || !message.structuredData.data.orders) {
+                    console.error('Invalid orders list data:', message.structuredData.data);
+                    return (
+                      <ChatMessage
+                        key={message.id}
+                        text="Error: Invalid orders data received"
+                        isUser={false}
+                      />
+                    );
+                  }
+                  
+                  return (
+                    <OrdersList
+                      key={message.id}
+                      orders={message.structuredData.data.orders}
+                      onAction={(action, orderId) => {
+                        // Handle order card actions
+                        let actionMessage = '';
+                        switch (action) {
+                          case 'cancel':
+                            actionMessage = `Cancel my order ${orderId}`;
+                            break;
+                          case 'confirm_cancel':
+                            actionMessage = 'Yes, cancel my order';
+                            break;
+                          case 'keep_order':
+                            actionMessage = 'No, keep my order';
+                            break;
+                          case 'track':
+                            actionMessage = `Track my order ${orderId}`;
+                            break;
+                          default:
+                            actionMessage = action;
+                        }
+                        
+                        // Add user message and send to agent
+                        const userMessage: Message = {
+                          id: Date.now().toString(),
+                          text: actionMessage,
+                          isUser: true,
+                          timestamp: new Date()
+                        };
+                        
+                        setMessages(prev => [...prev, userMessage]);
+                        
+                        // Send action to agent
+                        sendMessageMutation.mutate({
+                          message: actionMessage,
+                          currentThreadId: threadId
+                        });
+                      }}
+                    />
+                  );
+                }
+                
+                // Handle single order display
+                if (message.structuredData.type === 'order_display' || message.structuredData.type === 'order_confirmation') {
+                  // Validate required data exists
+                  if (!message.structuredData.data || !message.structuredData.data.orderId) {
+                    console.error('Invalid order data:', message.structuredData.data);
+                    return (
+                      <ChatMessage
+                        key={message.id}
+                        text="Error: Invalid order data received"
+                        isUser={false}
+                      />
+                    );
+                  }
+                  
+                  return (
+                    <OrderCard
+                      key={message.id}
+                      data={message.structuredData.data}
+                      messageType={message.structuredData.type}
+                      message={message.structuredData.message}
+                      onAction={(action, orderId) => {
+                        // Handle order card actions
+                        let actionMessage = '';
+                        switch (action) {
+                          case 'cancel':
+                            actionMessage = `Cancel my order ${orderId}`;
+                            break;
+                          case 'confirm_cancel':
+                            actionMessage = 'Yes, cancel my order';
+                            break;
+                          case 'keep_order':
+                            actionMessage = 'No, keep my order';
+                            break;
+                          case 'track':
+                            actionMessage = `Track my order ${orderId}`;
+                            break;
+                          default:
+                            actionMessage = action;
+                        }
+                        
+                        // Add user message and send to agent
+                        const userMessage: Message = {
+                          id: Date.now().toString(),
+                          text: actionMessage,
+                          isUser: true,
+                          timestamp: new Date()
+                        };
+                        
+                        setMessages(prev => [...prev, userMessage]);
+                        
+                        // Send action to agent
+                        sendMessageMutation.mutate({
+                          message: actionMessage,
+                          currentThreadId: threadId
+                        });
+                      }}
+                    />
+                  );
+                }
+              }
+              
+              // Default to regular chat message
+              return (
+                <ChatMessage
+                  key={message.id}
+                  text={message.text}
+                  isUser={message.isUser}
+                />
+              );
+            } catch (error) {
+              console.error('Error rendering message:', error, message);
+              return (
+                <ChatMessage
+                  key={message.id}
+                  text="Error rendering message"
+                  isUser={false}
+                />
+              );
+            }
+          })
         )}
         {sendMessageMutation.isPending && (
           <ChatMessage
