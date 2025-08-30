@@ -1,6 +1,7 @@
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { ConversationSidebar } from "../components/ConversationSidebar";
 import {
   CustomChat,
@@ -145,6 +146,7 @@ const HeaderIndicator = styled.div`
 `;
 
 export default function LeafyPilot() {
+  const navigate = useNavigate();
   const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [isConnected, setIsConnected] = useState<boolean>(true);
@@ -164,16 +166,17 @@ export default function LeafyPilot() {
   }, []);
 
   const quickActions = [
-    { icon: "🔍", text: "Find products by description", action: "search" },
-    { icon: "💰", text: "Compare prices across categories", action: "compare" },
-    { icon: "⭐", text: "Show highly rated items", action: "ratings" },
-    { icon: "📦", text: "Track my orders", action: "orders" },
+    { icon: "", text: "AI Semantic Search", action: "ai-search" },
+    { icon: "", text: "Find products by description", action: "search" },
+    { icon: "", text: "Compare prices across categories", action: "compare" },
+    { icon: "", text: "Show highly rated items", action: "ratings" },
+    { icon: "", text: "Track my orders", action: "orders" },
     {
-      icon: "❤️",
+      icon: "",
       text: "Find products based on preferences",
       action: "preferences",
     },
-    { icon: "🎁", text: "Gift recommendations", action: "gifts" },
+    { icon: "", text: "Gift recommendations", action: "gifts" },
   ];
 
   const features = [
@@ -184,8 +187,14 @@ export default function LeafyPilot() {
   ];
 
   const handleQuickAction = (action: string) => {
-    // TODO: Implement quick action functionality
-    console.log("Quick action clicked:", action);
+    if (action === "ai-search") {
+      navigate("/search");
+    } else if (action === "orders") {
+      navigate("/orders");
+    } else {
+      // TODO: Implement other quick action functionality
+      console.log("Quick action clicked:", action);
+    }
   };
 
   const handleConnectionStatusChange = (

@@ -61,7 +61,8 @@ const ChatInput = styled.textarea`
   resize: none;
   min-height: 40px;
   max-height: 100px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
+    sans-serif;
   line-height: 1.4;
 
   @media (max-width: 768px) {
@@ -146,21 +147,22 @@ const ConnectionIndicator = styled.div<{ connected: boolean }>`
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: ${props => props.connected ? '#10b981' : '#ef4444'};
+  background: ${(props) => (props.connected ? "#10b981" : "#ef4444")};
   position: relative;
   cursor: pointer;
-  
+
   &::after {
-    content: '';
+    content: "";
     position: absolute;
     width: 100%;
     height: 100%;
     border-radius: 50%;
     background: inherit;
-    animation: ${props => props.connected ? 'pulse-green' : 'pulse-red'} 2s infinite;
+    animation: ${(props) => (props.connected ? "pulse-green" : "pulse-red")} 2s
+      infinite;
     opacity: 0.6;
   }
-  
+
   @keyframes pulse-green {
     0% {
       transform: scale(1);
@@ -175,7 +177,7 @@ const ConnectionIndicator = styled.div<{ connected: boolean }>`
       opacity: 0.6;
     }
   }
-  
+
   @keyframes pulse-red {
     0% {
       transform: scale(1);
@@ -208,9 +210,9 @@ const ConnectionTooltip = styled.div<{ connected: boolean }>`
   transition: opacity 0.2s ease;
   margin-top: 0.5rem;
   z-index: 1000;
-  
+
   &::after {
-    content: '';
+    content: "";
     position: absolute;
     bottom: 100%;
     left: 50%;
@@ -224,7 +226,7 @@ const ConnectionContainer = styled.div`
   position: relative;
   display: flex;
   align-items: center;
-  
+
   &:hover ${ConnectionTooltip} {
     opacity: 1;
   }
@@ -238,7 +240,8 @@ interface Message {
   isUser: boolean;
   timestamp: Date;
   structuredData?: {
-    type: 'order_display' | 'order_confirmation' | 'orders_list' | 'text';
+    type: "order_display" | "order_confirmation" | "orders_list" | "text";
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data?: any;
     message?: string;
   };
@@ -255,16 +258,23 @@ interface ConversationSummary {
 interface CustomChatProps {
   selectedThreadId: string | null;
   onConversationsUpdate: (conversations: ConversationSummary[]) => void;
-  onConnectionStatusChange?: (isConnected: boolean, isAuthenticated: boolean) => void;
+  onConnectionStatusChange?: (
+    isConnected: boolean,
+    isAuthenticated: boolean
+  ) => void;
 }
 
-export function CustomChat({ selectedThreadId, onConversationsUpdate, onConnectionStatusChange }: CustomChatProps) {
+export function CustomChat({
+  selectedThreadId,
+  onConversationsUpdate,
+  onConnectionStatusChange,
+}: CustomChatProps) {
   const { isAuthenticated } = useAuth();
   const axiosClient = useAxios();
   const queryClient = useQueryClient();
-  
+
   const [messages, setMessages] = useState<Message[]>([]);
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState("");
   const [threadId, setThreadId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -273,13 +283,10 @@ export function CustomChat({ selectedThreadId, onConversationsUpdate, onConnecti
   };
 
   // Query to load all conversations
-  const {
-    data: conversations = [],
-    error: conversationsError,
-  } = useQuery({
-    queryKey: ['conversations'],
+  const { data: conversations = [], error: conversationsError } = useQuery({
+    queryKey: ["conversations"],
     queryFn: async () => {
-      const response = await axiosClient.get('/api/conversations');
+      const response = await axiosClient.get("/api/conversations");
       return response.data as ConversationSummary[];
     },
     enabled: isAuthenticated,
@@ -294,117 +301,152 @@ export function CustomChat({ selectedThreadId, onConversationsUpdate, onConnecti
     },
     onSuccess: (conversation) => {
       setThreadId(conversation.threadId);
-      
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const uiMessages: Message[] = conversation.messages.map((msg: any) => {
-        
         // Try to reconstruct structured data from text content
-        let structuredData = msg.structuredData || msg.structured_data || msg.metadata;
-        
+        let structuredData =
+          msg.structuredData || msg.structured_data || msg.metadata;
+
         if (!structuredData && !msg.isUser && msg.content) {
           // Check if this looks like an orders list response
-          if (msg.content.includes('Here are your last') && msg.content.includes('orders:') && msg.content.includes('Order ID:')) {
+          if (
+            msg.content.includes("Here are your last") &&
+            msg.content.includes("orders:") &&
+            msg.content.includes("Order ID:")
+          ) {
             // Parse order data from text - more comprehensive regex to capture items
-            const orderMatches = [...msg.content.matchAll(/(\d+)\) Order ID: ([a-f0-9]+)[\s\S]*?Date: ([\d-T:.Z]+)[\s\S]*?Status: (\w+)[\s\S]*?Total: \$?([\d.]+)[\s\S]*?Items:([\s\S]*?)(?=(?:\d+\) Order ID:)|$)/g)];
-            
+            const orderMatches = [
+              ...msg.content.matchAll(
+                /(\d+)\) Order ID: ([a-f0-9]+)[\s\S]*?Date: ([\d-T:.Z]+)[\s\S]*?Status: (\w+)[\s\S]*?Total: \$?([\d.]+)[\s\S]*?Items:([\s\S]*?)(?=(?:\d+\) Order ID:)|$)/g
+              ),
+            ];
+
             if (orderMatches && orderMatches.length > 0) {
-              const orders = orderMatches.map((match) => {
-                const [, orderNum, orderId, date, status, total, itemsText] = match;
-                
-                // Parse items from the items section
-                const items: any[] = [];
-                if (itemsText) {
-                  const itemMatches = [...itemsText.matchAll(/- (.+?) — qty (\d+) — \$?([\d.]+)(?: each)?/g)];
-                  itemMatches.forEach((itemMatch) => {
-                    const [, name, quantity, price] = itemMatch;
-                    items.push({
-                      name: name.trim(),
-                      quantity: parseInt(quantity),
-                      price: parseFloat(price)
+              const orders = orderMatches
+                .map((match) => {
+                  const [, , orderId, date, status, total, itemsText] = match;
+
+                  // Parse items from the items section
+                  const items: unknown[] = [];
+                  if (itemsText) {
+                    const itemMatches = [
+                      ...itemsText.matchAll(
+                        /- (.+?) — qty (\d+) — \$?([\d.]+)(?: each)?/g
+                      ),
+                    ];
+                    itemMatches.forEach((itemMatch) => {
+                      const [, name, quantity, price] = itemMatch;
+                      items.push({
+                        name: name.trim(),
+                        quantity: parseInt(quantity),
+                        price: parseFloat(price),
+                      });
                     });
-                  });
-                }
-                
-                return {
-                  orderId,
-                  date,
-                  status,
-                  total: parseFloat(total),
-                  items
-                };
-              }).filter(Boolean);
-              
+                  }
+
+                  return {
+                    orderId,
+                    date,
+                    status,
+                    total: parseFloat(total),
+                    items,
+                  };
+                })
+                .filter(Boolean);
+
               if (orders.length > 0) {
                 structuredData = {
-                  type: 'orders_list' as const,
+                  type: "orders_list" as const,
                   data: { orders },
-                  message: 'Here are your orders:'
+                  message: "Here are your orders:",
                 };
               }
             }
           }
           // Check if this looks like a single order response
-          else if (msg.content.includes('Order ID:') && msg.content.includes('Status:') && msg.content.includes('Total:') && !msg.content.includes('Here are your last')) {
-            const orderMatch = msg.content.match(/Order ID: ([a-f0-9]+)[\s\S]*?Date: ([\d-T:.Z]+)[\s\S]*?Status: (\w+)[\s\S]*?Total: \$?([\d.]+)[\s\S]*?Items:([\s\S]*?)(?=Would you like|$)/);
-            
+          else if (
+            msg.content.includes("Order ID:") &&
+            msg.content.includes("Status:") &&
+            msg.content.includes("Total:") &&
+            !msg.content.includes("Here are your last")
+          ) {
+            const orderMatch = msg.content.match(
+              /Order ID: ([a-f0-9]+)[\s\S]*?Date: ([\d-T:.Z]+)[\s\S]*?Status: (\w+)[\s\S]*?Total: \$?([\d.]+)[\s\S]*?Items:([\s\S]*?)(?=Would you like|$)/
+            );
+
             if (orderMatch) {
               const [, orderId, date, status, total, itemsText] = orderMatch;
-              
+
               // Parse items
-              const items: any[] = [];
+              const items: unknown[] = [];
               if (itemsText) {
-                const itemMatches = [...itemsText.matchAll(/- (.+?) — qty (\d+) — \$?([\d.]+)(?: each)?/g)];
+                const itemMatches = [
+                  ...itemsText.matchAll(
+                    /- (.+?) — qty (\d+) — \$?([\d.]+)(?: each)?/g
+                  ),
+                ];
                 itemMatches.forEach((itemMatch) => {
                   const [, name, quantity, price] = itemMatch;
                   items.push({
                     name: name.trim(),
                     quantity: parseInt(quantity),
-                    price: parseFloat(price)
+                    price: parseFloat(price),
                   });
                 });
               }
-              
+
               structuredData = {
-                type: 'order_display' as const,
+                type: "order_display" as const,
                 data: {
                   orderId,
                   date,
                   status,
                   total: parseFloat(total),
-                  items
+                  items,
                 },
-                message: msg.content.split('Order ID:')[0].trim()
+                message: msg.content.split("Order ID:")[0].trim(),
               };
             }
           }
         }
-        
+
         const mappedMsg = {
           id: msg.id,
           text: msg.content,
-          isUser: msg.role === 'user',
+          isUser: msg.role === "user",
           timestamp: new Date(msg.timestamp),
-          structuredData
+          structuredData,
         };
         return mappedMsg;
       });
-      
+
       setMessages(uiMessages);
     },
     onError: (error) => {
-      console.error('Error loading conversation:', error);
-    }
+      console.error("Error loading conversation:", error);
+    },
   });
 
   // Mutation to send a message
   const sendMessageMutation = useMutation({
-    mutationFn: async ({ message, currentThreadId }: { message: string; currentThreadId: string | null }) => {
+    mutationFn: async ({
+      message,
+      currentThreadId,
+    }: {
+      message: string;
+      currentThreadId: string | null;
+    }) => {
       if (!currentThreadId) {
         // Start new conversation
-        const response = await axiosClient.post('/api/agent', { message });
+        const response = await axiosClient.post("/api/agent", { message });
         return { ...response.data, isNewThread: true };
       } else {
         // Continue existing conversation
-        const response = await axiosClient.post(`/api/agent/${currentThreadId}`, { message });
+        const response = await axiosClient.post(
+          `/api/agent/${currentThreadId}`,
+          { message }
+        );
         return { ...response.data, isNewThread: false };
       }
     },
@@ -416,47 +458,55 @@ export function CustomChat({ selectedThreadId, onConversationsUpdate, onConnecti
 
       // Handle structured responses
       let aiMessage: Message;
-      
-      if (data.response && typeof data.response === 'object' && data.response.type && data.response.type !== 'text') {
+
+      if (
+        data.response &&
+        typeof data.response === "object" &&
+        data.response.type &&
+        data.response.type !== "text"
+      ) {
         // Structured response (order card, etc.)
         aiMessage = {
           id: (Date.now() + 1).toString(),
-          text: data.response.message || 'Order information',
+          text: data.response.message || "Order information",
           isUser: false,
           timestamp: new Date(),
           structuredData: {
             type: data.response.type,
             data: data.response.data,
-            message: data.response.message
-          }
+            message: data.response.message,
+          },
         };
       } else {
         // Regular text response
         aiMessage = {
           id: (Date.now() + 1).toString(),
-          text: typeof data.response === 'string' ? data.response : data.response?.message || 'No response received',
+          text:
+            typeof data.response === "string"
+              ? data.response
+              : data.response?.message || "No response received",
           isUser: false,
-          timestamp: new Date()
+          timestamp: new Date(),
         };
       }
 
-      setMessages(prev => [...prev, aiMessage]);
+      setMessages((prev) => [...prev, aiMessage]);
 
       // Invalidate conversations query to refresh the list
-      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
     },
     onError: (error) => {
-      console.error('Error sending message:', error);
-      
+      console.error("Error sending message:", error);
+
       // Add error message to chat
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: 'Sorry, I encountered an error connecting to the server. Please try again.',
+        text: "Sorry, I encountered an error connecting to the server. Please try again.",
         isUser: false,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
-      setMessages(prev => [...prev, errorMessage]);
-    }
+      setMessages((prev) => [...prev, errorMessage]);
+    },
   });
 
   useEffect(() => {
@@ -482,36 +532,41 @@ export function CustomChat({ selectedThreadId, onConversationsUpdate, onConnecti
   }, [selectedThreadId]);
 
   const handleSendMessage = async () => {
-    if (!inputValue.trim() || sendMessageMutation.isPending || !isAuthenticated) return;
+    if (!inputValue.trim() || sendMessageMutation.isPending || !isAuthenticated)
+      return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
       text: inputValue,
       isUser: true,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     const currentInput = inputValue;
-    setInputValue('');
+    setInputValue("");
 
     // Send message using mutation
     sendMessageMutation.mutate({
       message: currentInput,
-      currentThreadId: threadId
+      currentThreadId: threadId,
     });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
   };
 
   // Determine loading and error states
-  const isLoading = sendMessageMutation.isPending || loadConversationMutation.isPending;
-  const hasError = sendMessageMutation.error || loadConversationMutation.error || conversationsError;
+  const isLoading =
+    sendMessageMutation.isPending || loadConversationMutation.isPending;
+  const hasError =
+    sendMessageMutation.error ||
+    loadConversationMutation.error ||
+    conversationsError;
   const isConnected = !hasError;
 
   // Notify parent about connection status changes
@@ -527,18 +582,20 @@ export function CustomChat({ selectedThreadId, onConversationsUpdate, onConnecti
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          ⚠️ {hasError instanceof Error ? hasError.message : 'An error occurred'}
+          ⚠️{" "}
+          {hasError instanceof Error ? hasError.message : "An error occurred"}
         </ErrorBanner>
       )}
-      
+
       <ChatMessagesContainer>
         {messages.length === 0 ? (
           <WelcomeMessage>
             <WelcomeIcon>🛍️</WelcomeIcon>
             <WelcomeText>Welcome to LeafyPilot!</WelcomeText>
             <WelcomeSubtext>
-              I'm your personal shopping assistant. Ask me about products, 
-              compare prices, get recommendations, or anything else you need help with.
+              I'm your personal shopping assistant. Ask me about products,
+              compare prices, get recommendations, or anything else you need
+              help with.
             </WelcomeSubtext>
           </WelcomeMessage>
         ) : (
@@ -546,9 +603,15 @@ export function CustomChat({ selectedThreadId, onConversationsUpdate, onConnecti
             try {
               if (!message.isUser && message.structuredData?.type) {
                 // Handle orders list display
-                if (message.structuredData.type === 'orders_list') {
-                  if (!message.structuredData.data || !message.structuredData.data.orders) {
-                    console.error('Invalid orders list data:', message.structuredData.data);
+                if (message.structuredData.type === "orders_list") {
+                  if (
+                    !message.structuredData.data ||
+                    !message.structuredData.data.orders
+                  ) {
+                    console.error(
+                      "Invalid orders list data:",
+                      message.structuredData.data
+                    );
                     return (
                       <ChatMessage
                         key={message.id}
@@ -557,56 +620,65 @@ export function CustomChat({ selectedThreadId, onConversationsUpdate, onConnecti
                       />
                     );
                   }
-                  
+
                   return (
                     <OrdersList
                       key={message.id}
                       orders={message.structuredData.data.orders}
                       onAction={(action, orderId) => {
                         // Handle order card actions
-                        let actionMessage = '';
+                        let actionMessage = "";
                         switch (action) {
-                          case 'cancel':
+                          case "cancel":
                             actionMessage = `Cancel my order ${orderId}`;
                             break;
-                          case 'confirm_cancel':
-                            actionMessage = 'Yes, cancel my order';
+                          case "confirm_cancel":
+                            actionMessage = "Yes, cancel my order";
                             break;
-                          case 'keep_order':
-                            actionMessage = 'No, keep my order';
+                          case "keep_order":
+                            actionMessage = "No, keep my order";
                             break;
-                          case 'track':
+                          case "track":
                             actionMessage = `Track my order ${orderId}`;
                             break;
                           default:
                             actionMessage = action;
                         }
-                        
+
                         // Add user message and send to agent
                         const userMessage: Message = {
                           id: Date.now().toString(),
                           text: actionMessage,
                           isUser: true,
-                          timestamp: new Date()
+                          timestamp: new Date(),
                         };
-                        
-                        setMessages(prev => [...prev, userMessage]);
-                        
+
+                        setMessages((prev) => [...prev, userMessage]);
+
                         // Send action to agent
                         sendMessageMutation.mutate({
                           message: actionMessage,
-                          currentThreadId: threadId
+                          currentThreadId: threadId,
                         });
                       }}
                     />
                   );
                 }
-                
+
                 // Handle single order display
-                if (message.structuredData.type === 'order_display' || message.structuredData.type === 'order_confirmation') {
+                if (
+                  message.structuredData.type === "order_display" ||
+                  message.structuredData.type === "order_confirmation"
+                ) {
                   // Validate required data exists
-                  if (!message.structuredData.data || !message.structuredData.data.orderId) {
-                    console.error('Invalid order data:', message.structuredData.data);
+                  if (
+                    !message.structuredData.data ||
+                    !message.structuredData.data.orderId
+                  ) {
+                    console.error(
+                      "Invalid order data:",
+                      message.structuredData.data
+                    );
                     return (
                       <ChatMessage
                         key={message.id}
@@ -615,7 +687,7 @@ export function CustomChat({ selectedThreadId, onConversationsUpdate, onConnecti
                       />
                     );
                   }
-                  
+
                   return (
                     <OrderCard
                       key={message.id}
@@ -624,45 +696,45 @@ export function CustomChat({ selectedThreadId, onConversationsUpdate, onConnecti
                       message={message.structuredData.message}
                       onAction={(action, orderId) => {
                         // Handle order card actions
-                        let actionMessage = '';
+                        let actionMessage = "";
                         switch (action) {
-                          case 'cancel':
+                          case "cancel":
                             actionMessage = `Cancel my order ${orderId}`;
                             break;
-                          case 'confirm_cancel':
-                            actionMessage = 'Yes, cancel my order';
+                          case "confirm_cancel":
+                            actionMessage = "Yes, cancel my order";
                             break;
-                          case 'keep_order':
-                            actionMessage = 'No, keep my order';
+                          case "keep_order":
+                            actionMessage = "No, keep my order";
                             break;
-                          case 'track':
+                          case "track":
                             actionMessage = `Track my order ${orderId}`;
                             break;
                           default:
                             actionMessage = action;
                         }
-                        
+
                         // Add user message and send to agent
                         const userMessage: Message = {
                           id: Date.now().toString(),
                           text: actionMessage,
                           isUser: true,
-                          timestamp: new Date()
+                          timestamp: new Date(),
                         };
-                        
-                        setMessages(prev => [...prev, userMessage]);
-                        
+
+                        setMessages((prev) => [...prev, userMessage]);
+
                         // Send action to agent
                         sendMessageMutation.mutate({
                           message: actionMessage,
-                          currentThreadId: threadId
+                          currentThreadId: threadId,
                         });
                       }}
                     />
                   );
                 }
               }
-              
+
               // Default to regular chat message
               return (
                 <ChatMessage
@@ -672,7 +744,7 @@ export function CustomChat({ selectedThreadId, onConversationsUpdate, onConnecti
                 />
               );
             } catch (error) {
-              console.error('Error rendering message:', error, message);
+              console.error("Error rendering message:", error, message);
               return (
                 <ChatMessage
                   key={message.id}
@@ -684,31 +756,31 @@ export function CustomChat({ selectedThreadId, onConversationsUpdate, onConnecti
           })
         )}
         {sendMessageMutation.isPending && (
-          <ChatMessage
-            text=""
-            isUser={false}
-            isLoading={true}
-          />
+          <ChatMessage text="" isUser={false} isLoading={true} />
         )}
         <div ref={messagesEndRef} />
       </ChatMessagesContainer>
-      
+
       <ChatInputContainer>
         <InputRow>
           <ChatInput
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={isAuthenticated ? "Ask me anything about products, shopping, or recommendations..." : "Please log in to use the AI assistant"}
+            placeholder={
+              isAuthenticated
+                ? "Ask me anything about products, shopping, or recommendations..."
+                : "Please log in to use the AI assistant"
+            }
             disabled={isLoading || !isAuthenticated}
           />
           <ChatButton
             onClick={handleSendMessage}
             disabled={!inputValue.trim() || isLoading || !isAuthenticated}
-            whileHover={{ scale: (isConnected && isAuthenticated) ? 1.02 : 1 }}
-            whileTap={{ scale: (isConnected && isAuthenticated) ? 0.98 : 1 }}
+            whileHover={{ scale: isConnected && isAuthenticated ? 1.02 : 1 }}
+            whileTap={{ scale: isConnected && isAuthenticated ? 0.98 : 1 }}
           >
-            {sendMessageMutation.isPending ? 'Sending...' : 'Send'}
+            {sendMessageMutation.isPending ? "Sending..." : "Send"}
           </ChatButton>
         </InputRow>
       </ChatInputContainer>

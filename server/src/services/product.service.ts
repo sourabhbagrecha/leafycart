@@ -18,7 +18,7 @@ export class ProductService {
       search,
       sort = "createdAt",
       page = 1,
-      limit = 10,
+      limit = 20,
     } = options;
 
     const query: any = {};
@@ -289,5 +289,87 @@ export class ProductService {
     return {
       reviews,
     };
+  }
+
+  async findUnembedded(): Promise<Product[]> {
+    // Use a simpler query that bypasses strict typing
+    const query = {
+      $or: [
+        { embedding: { $exists: false } },
+        { embedding: { $type: "null" } },
+        { embedding: { $size: 0 } }
+      ]
+    };
+
+    const products = await collections.products
+      ?.find(query as any)
+      .toArray();
+
+    if (!products) {
+      return [];
+    }
+
+    return products as Product[];
+  }
+
+  async updateEmbedding(productId: string, embedding: number[]) {
+    const result = await collections.products?.findOneAndUpdate(
+      { _id: new ObjectId(productId) },
+      {
+        $set: {
+          embedding,
+          embeddingCreatedAt: new Date(),
+          updatedAt: new Date()
+        }
+      },
+      { returnDocument: "after" }
+    );
+
+    if (!result) {
+      throw new AppError(404, "Product not found");
+    }
+
+    return result;
+  }
+
+  async searchSemantic(queryEmbedding: number[], limit: number = 10) {
+    try {
+      const pipeline = [
+        {
+          $vectorSearch: {
+            index: "vector_index",
+            path: "embedding",
+            queryVector: queryEmbedding,
+            numCandidates: 100,
+            limit: limit
+          }
+        },
+        {
+          $project: {
+            _id: 1,
+            name: 1,
+            description: 1,
+            price: 1,
+            category: 1,
+            images: 1,
+            avgRating: 1,
+            numReviews: 1,
+            stock: 1,
+            score: { $meta: "vectorSearchScore" }
+          }
+        }
+      ];
+
+      const results = await collections.products?.aggregate(pipeline).toArray();
+      
+      if (!results) {
+        return [];
+      }
+
+      return results;
+    } catch (error) {
+      console.error("Error in semantic search:", error);
+      throw new AppError(500, "Semantic search failed");
+    }
   }
 }

@@ -12,6 +12,8 @@ const {
   createProduct,
   updateProduct,
   deleteProduct,
+  vectorizeProducts,
+  suggestProducts,
 } = productController;
 
 router.get("/", getProducts);
@@ -24,5 +26,11 @@ router.patch(
   updateProduct
 );
 router.delete("/:productId", auth, deleteProduct);
+
+// Vectorization endpoint
+router.post("/vectorize", auth, vectorizeProducts);
+
+// Semantic search endpoint
+router.post("/suggest", suggestProducts);
 
 export const productRoutes = router;

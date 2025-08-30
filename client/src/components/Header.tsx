@@ -49,7 +49,9 @@ const Header = () => {
         <Logo to="/">LeafyCart</Logo>
         <NavLinks>
           <NavLink to="/orders">Orders</NavLink>
+          <NavLink to="/search">AI Search</NavLink>
           <NavLink to="/ai">LeafyPilot</NavLink>
+          <NavLink to="/admin">Admin</NavLink>
           <NavLink to="/cart">
             <HeaderCart />
           </NavLink>

@@ -5,4 +5,5 @@ export { userRoutes } from "./user.routes.js";
 export { orderRoutes } from "./order.routes.js";
 export { cartRoutes } from "./cart.routes.js";
 export { reviewRoutes } from "./review.routes.js";
+export { adminRoutes } from "./admin.routes.js";
 export { default as conversationRoutes } from "./conversation.routes.js";

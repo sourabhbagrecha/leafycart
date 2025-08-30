@@ -21,6 +21,8 @@ export interface Product {
   reviews: Review[];
   avgRating: number;
   numReviews: number;
+  embedding?: number[];
+  embeddingCreatedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }

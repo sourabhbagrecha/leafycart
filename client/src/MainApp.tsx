@@ -8,6 +8,8 @@ const Help = lazy(() => import("./pages/Help"));
 const Checkout = lazy(() => import("./pages/Checkout"));
 const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess"));
 const Orders = lazy(() => import("./pages/Orders"));
+const Admin = lazy(() => import("./pages/Admin"));
+const Search = lazy(() => import("./pages/Search"));
 import Header from "./components/Header";
 import { useAuth } from "./hooks/useAuth";
 import LeafyPilot from "./pages/LeafyPilot";
@@ -42,6 +44,8 @@ export default function MainApp() {
           <Route path="/help" element={<Help />} />
           <Route path="/orders" element={<Orders />} />
           <Route path="/ai" element={<LeafyPilot />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/search" element={<Search />} />
         </Routes>
       </MainContent>
     </AppWrapper>
